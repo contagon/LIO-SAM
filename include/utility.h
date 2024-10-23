@@ -64,31 +64,31 @@ class ParamServer
 {
 public:
 
-    ros::NodeHandle nh;
+    // ros::NodeHandle nh;
 
-    std::string robot_id;
+    // std::string robot_id;
 
     //Topics
-    string pointCloudTopic;
-    string imuTopic;
-    string odomTopic;
-    string gpsTopic;
+    // string pointCloudTopic;
+    // string imuTopic;
+    // string odomTopic;
+    // string gpsTopic;
 
     //Frames
-    string lidarFrame;
-    string baselinkFrame;
-    string odometryFrame;
-    string mapFrame;
+    // string lidarFrame;
+    // string baselinkFrame;
+    // string odometryFrame;
+    // string mapFrame;
 
     // GPS Settings
-    bool useImuHeadingInitialization;
-    bool useGpsElevation;
-    float gpsCovThreshold;
-    float poseCovThreshold;
+    // bool useImuHeadingInitialization;
+    // bool useGpsElevation;
+    // float gpsCovThreshold;
+    // float poseCovThreshold;
 
     // Save pcd
-    bool savePCD;
-    string savePCDDirectory;
+    // bool savePCD;
+    // string savePCDDirectory;
 
     // Lidar Sensor Configuration
     SensorType sensor;
