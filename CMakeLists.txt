@@ -29,6 +29,7 @@ find_package(Boost REQUIRED COMPONENTS timer)
 # target_include_directories(${PROJECT_NAME}_mapOptmization PUBLIC include ${PCL_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${GTSAM_INCLUDE_DIR})
 
 # IMU Preintegration
-add_library(${PROJECT_NAME} src/featureExtraction.cpp)
+add_library(${PROJECT_NAME} src/featureExtraction.cpp src/imageProjection.cpp)
 target_link_libraries(${PROJECT_NAME} Boost::timer ${PCL_LIBRARIES} ${OpenCV_LIBRARIES} ${OpenMP_CXX_FLAGS} gtsam)
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" ${PCL_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${GTSAM_INCLUDE_DIR})
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)

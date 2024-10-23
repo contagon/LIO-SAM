@@ -168,5 +168,5 @@ struct PointXYZIRT {
 POINT_CLOUD_REGISTER_POINT_STRUCT(
     PointXYZIRT,
     (float, x, x)(float, y, y)(float, z, z)(float, intensity,
-                                            intensity)(uint16_t, ring,
+                                            intensity)(std::uint16_t, ring,
                                                        ring)(float, time, time))
