@@ -1,4 +1,8 @@
 #pragma once
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <Eigen/src/Geometry/Quaternion.h>
+#include <vector>
 
 #include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
@@ -15,6 +19,20 @@
 
 #include <pcl/point_cloud.h>
 #include <stddef.h>
+
+struct Imu {
+  double stamp;
+  Eigen::Vector3d gyro;
+  Eigen::Vector3d acc;
+  Eigen::Quaternion<double> orientation;
+};
+
+struct Odometry {
+  double stamp;
+  Eigen::Vector3d position;
+  Eigen::Quaternion<double> orientation;
+};
+
 enum class SensorType { VELODYNE, OUSTER, LIVOX };
 
 struct LioSamParams {
@@ -74,10 +92,32 @@ struct LioSamParams {
   // float historyKeyframeSearchTimeDiff;
   // int historyKeyframeSearchNum;
   // float historyKeyframeFitnessScore;
+
+  // TODO: I'm rather unclear what this is doing... changing frames of some
+  // sort, but I'm not 100% sure from and to what
+  Imu imuConverter(const Imu &imu_in) {
+    // rotate acceleration
+    Eigen::Vector3d acc = extRot * imu_in.acc;
+
+    // rotate gyroscope
+    Eigen::Vector3d gyro = extRot * imu_in.gyro;
+
+    // rotate roll pitch yaw
+    Eigen::Quaterniond q_final = imu_in.orientation * extQRPY;
+
+    if (sqrt(q_final.x() * q_final.x() + q_final.y() * q_final.y() +
+             q_final.z() * q_final.z() + q_final.w() * q_final.w()) < 0.1) {
+      std::cout << "Invalid quaternion, please use a 9-axis IMU!" << std::endl;
+      throw -1;
+    }
+
+    return Imu{.gyro = gyro, .acc = acc, .orientation = q_final};
+  }
 };
 
+// TODO: Should all the pointclouds here have the same type?
 template <typename PointT> struct CloudInfo {
-  double timestamp;
+  double stamp;
 
   std::vector<std::int32_t> startRingIndex;
   std::vector<std::int32_t> endRingIndex;
@@ -117,3 +157,16 @@ template <typename PointT> struct CloudInfo {
 };
 
 typedef pcl::PointXYZI PointType;
+
+struct PointXYZIRT {
+  PCL_ADD_POINT4D
+  PCL_ADD_INTENSITY;
+  uint16_t ring;
+  float time;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+} EIGEN_ALIGN16;
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+    PointXYZIRT,
+    (float, x, x)(float, y, y)(float, z, z)(float, intensity,
+                                            intensity)(uint16_t, ring,
+                                                       ring)(float, time, time))
