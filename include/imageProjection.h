@@ -1,22 +1,11 @@
 #pragma once
 
+#include "types.h"
+#include "utils.h"
 #include <Eigen/Geometry>
 #include <opencv2/opencv.hpp>
 #include <optional>
 #include <pcl/point_cloud.h>
-#include <types.h>
-
-template <typename T>
-void imuRPY2rosRPY(Eigen::Quaterniond thisImuMsg, T *rosRoll, T *rosPitch,
-                   T *rosYaw) {
-  // https://stackoverflow.com/a/45577965
-  double imuRoll, imuPitch, imuYaw;
-  Eigen::Vector3d angles = Eigen::Matrix3d(thisImuMsg).eulerAngles(2, 1, 0);
-
-  *rosRoll = angles[2];
-  *rosPitch = angles[1];
-  *rosYaw = angles[0];
-}
 
 const int queueLength = 2000;
 

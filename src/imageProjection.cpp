@@ -166,8 +166,8 @@ void ImageProjection::imuDeskewInfo() {
 
     // get roll, pitch, and yaw estimation for this scan
     if (currentImuTime <= timeScanCur)
-      imuRPY2rosRPY(thisImuMsg.orientation, &cloudInfo.imuRollInit,
-                    &cloudInfo.imuPitchInit, &cloudInfo.imuYawInit);
+      quat2rpy(thisImuMsg.orientation, &cloudInfo.imuRollInit,
+               &cloudInfo.imuPitchInit, &cloudInfo.imuYawInit);
 
     if (currentImuTime > timeScanEnd + 0.01)
       break;
@@ -233,7 +233,7 @@ void ImageProjection::odomDeskewInfo() {
   }
 
   double roll, pitch, yaw;
-  imuRPY2rosRPY(startOdomMsg.orientation, &roll, &pitch, &yaw);
+  quat2rpy(startOdomMsg.orientation, &roll, &pitch, &yaw);
 
   // Initial guess used in mapOptimization
   cloudInfo.initialGuessX = startOdomMsg.position.x();
@@ -266,7 +266,7 @@ void ImageProjection::odomDeskewInfo() {
       startOdomMsg.position.x(), startOdomMsg.position.y(),
       startOdomMsg.position.z(), roll, pitch, yaw);
 
-  imuRPY2rosRPY(endOdomMsg.orientation, &roll, &pitch, &yaw);
+  quat2rpy(endOdomMsg.orientation, &roll, &pitch, &yaw);
   Eigen::Affine3f transEnd =
       pcl::getTransformation(endOdomMsg.position.x(), endOdomMsg.position.y(),
                              endOdomMsg.position.z(), roll, pitch, yaw);

@@ -28,11 +28,16 @@ public:
   void
   addLidarMeasurement(double stamp,
                       const pcl::PointCloud<PointXYZIRT>::Ptr laserCloudMsg) {
-    // Process point cloud
+    // Deskew
     auto maybe_cloudinfo = imageProjector.cloudHandler(stamp, laserCloudMsg);
+
     if (maybe_cloudinfo.has_value()) {
+      // Extract features
       auto cloud_info = maybe_cloudinfo.value();
       featureExtractor.processCloud(cloud_info);
+
+      // mapOptimization
+      // mapOptimization.laserCloudInfoHandler(cloud_info);
       // mapOptimization.somethingsomething
 
       // Simulate sending odometry to all of the nodes

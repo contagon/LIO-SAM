@@ -24,6 +24,7 @@ struct Imu {
   double stamp;
   Eigen::Vector3d gyro;
   Eigen::Vector3d acc;
+  // TODO: Be rid
   Eigen::Quaternion<double> orientation;
 };
 
@@ -51,13 +52,13 @@ struct LioSamParams {
   float imuGyrBiasN;
   float imuGravity;
   float imuRPYWeight;
-  std::vector<double> extRotV;
-  std::vector<double> extRPYV;
-  std::vector<double> extTransV;
+  // TODO: Be rid of both of these soon enough here
+  // rotation matrix of accel -> gyro ??
   Eigen::Matrix3d extRot;
+  Eigen::Quaterniond extQRPY;
+  // rotation matrix of lidar -> accel
   Eigen::Matrix3d extRPY;
   Eigen::Vector3d extTrans;
-  Eigen::Quaterniond extQRPY;
 
   // LOAM
   float edgeThreshold;
@@ -75,31 +76,32 @@ struct LioSamParams {
 
   // CPU Params
   int numberOfCores;
-  // double mappingProcessInterval;
+  double mappingProcessInterval;
 
   // TODO: Decide what to do with mapping stuff
   // Surrounding map
-  // float surroundingkeyframeAddingDistThreshold;
-  // float surroundingkeyframeAddingAngleThreshold;
-  // float surroundingKeyframeDensity;
-  // float surroundingKeyframeSearchRadius;
+  float surroundingkeyframeAddingDistThreshold;
+  float surroundingkeyframeAddingAngleThreshold;
+  float surroundingKeyframeDensity;
+  float surroundingKeyframeSearchRadius;
 
-  // Loop closure
-  // bool loopClosureEnableFlag;
-  // float loopClosureFrequency;
-  // int surroundingKeyframeSize;
-  // float historyKeyframeSearchRadius;
-  // float historyKeyframeSearchTimeDiff;
-  // int historyKeyframeSearchNum;
-  // float historyKeyframeFitnessScore;
+  // Save pcd
+  bool savePCD;
+  std::string savePCDDirectory;
+  float resolution;
+
+  // global map visualization radius
+  float globalMapVisualizationSearchRadius;
+  float globalMapVisualizationPoseDensity;
+  float globalMapVisualizationLeafSize;
 
   // TODO: I'm rather unclear what this is doing... changing frames of some
   // sort, but I'm not 100% sure from and to what
   Imu imuConverter(const Imu &imu_in) {
-    // rotate acceleration
+    // rotate acceleration to lidar frame
     Eigen::Vector3d acc = extRot * imu_in.acc;
 
-    // rotate gyroscope
+    // rotate gyroscope to lidar frame
     Eigen::Vector3d gyro = extRot * imu_in.gyro;
 
     // rotate roll pitch yaw
@@ -170,3 +172,21 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(
     (float, x, x)(float, y, y)(float, z, z)(float, intensity,
                                             intensity)(std::uint16_t, ring,
                                                        ring)(float, time, time))
+
+struct PointXYZIRPYT {
+  PCL_ADD_POINT4D
+  PCL_ADD_INTENSITY; // preferred way of adding a XYZ+padding
+  float roll;
+  float pitch;
+  float yaw;
+  double time;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW // make sure our new allocators are aligned
+} EIGEN_ALIGN16; // enforce SSE padding for correct memory alignment
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+    PointXYZIRPYT,
+    (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(
+        float, roll, roll)(float, pitch, pitch)(float, yaw, yaw)(double, time,
+                                                                 time))
+
+typedef PointXYZIRPYT PointTypePose;
