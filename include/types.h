@@ -30,13 +30,15 @@ struct Imu {
 
 struct Odometry {
   double stamp;
-  Eigen::Vector3d position;
   Eigen::Quaternion<double> orientation;
+  Eigen::Vector3d position;
 };
 
 enum class SensorType { VELODYNE, OUSTER, LIVOX };
 
 struct LioSamParams {
+  // REQUIRED PARAMS
+  // Lidar
   SensorType sensor;
   int N_SCAN;
   int Horizon_SCAN;
@@ -44,8 +46,7 @@ struct LioSamParams {
   float lidarMinRange;
   float lidarMaxRange;
 
-  // IMU
-  // TODO: This can probably be simplified a bunch
+  // imu
   float imuAccNoise;
   float imuGyrNoise;
   float imuAccBiasN;
@@ -53,47 +54,47 @@ struct LioSamParams {
   float imuGravity;
   float imuRPYWeight;
   // TODO: Be rid of both of these soon enough here
-  // rotation matrix of accel -> gyro ??
-  Eigen::Matrix3d extRot;
+  // rotation matrix of accel -> orientation on imu
   Eigen::Quaterniond extQRPY;
-  // rotation matrix of lidar -> accel
   Eigen::Matrix3d extRPY;
+  // rotation matrix of lidar -> imu
+  Eigen::Matrix3d extRot;
   Eigen::Vector3d extTrans;
 
+  // Optionally tuned params
   // LOAM
-  float edgeThreshold;
-  float surfThreshold;
-  int edgeFeatureMinValidNum;
-  int surfFeatureMinValidNum;
+  float edgeThreshold = 1.0;
+  float surfThreshold = 0.1;
+  int edgeFeatureMinValidNum = 10;
+  int surfFeatureMinValidNum = 100;
 
   // voxel filter paprams
-  float odometrySurfLeafSize;
-  float mappingCornerLeafSize;
-  float mappingSurfLeafSize;
+  float odometrySurfLeafSize = 0.4;
+  float mappingCornerLeafSize = 0.2;
+  float mappingSurfLeafSize = 0.4;
 
-  float z_tollerance;
-  float rotation_tollerance;
+  float z_tollerance = 1000;
+  float rotation_tollerance = 1000;
 
   // CPU Params
-  int numberOfCores;
-  double mappingProcessInterval;
+  int numberOfCores = 4;
+  double mappingProcessInterval = 0.15;
 
-  // TODO: Decide what to do with mapping stuff
   // Surrounding map
-  float surroundingkeyframeAddingDistThreshold;
-  float surroundingkeyframeAddingAngleThreshold;
-  float surroundingKeyframeDensity;
-  float surroundingKeyframeSearchRadius;
-
-  // Save pcd
-  bool savePCD;
-  std::string savePCDDirectory;
-  float resolution;
+  float surroundingkeyframeAddingDistThreshold = 1.0;
+  float surroundingkeyframeAddingAngleThreshold = 0.2;
+  float surroundingKeyframeDensity = 2.0;
+  float surroundingKeyframeSearchRadius = 50.0;
 
   // global map visualization radius
-  float globalMapVisualizationSearchRadius;
-  float globalMapVisualizationPoseDensity;
-  float globalMapVisualizationLeafSize;
+  float globalMapVisualizationSearchRadius = 1000.0;
+  float globalMapVisualizationPoseDensity = 10.0;
+  float globalMapVisualizationLeafSize = 1.0;
+
+  // Save pcd
+  bool savePCD = false;
+  std::string savePCDDirectory = "/tmp";
+  float resolution = 0.2;
 
   // TODO: I'm rather unclear what this is doing... changing frames of some
   // sort, but I'm not 100% sure from and to what

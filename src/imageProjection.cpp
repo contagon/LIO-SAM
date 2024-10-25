@@ -1,4 +1,5 @@
 #include "imageProjection.h"
+#include "utils.h"
 
 // -------------------------- Public Methods -------------------------- //
 ImageProjection::ImageProjection(const LioSamParams &params)

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "types.h"
-#include "utils.h"
 #include <Eigen/Geometry>
 #include <opencv2/opencv.hpp>
 #include <optional>

@@ -71,3 +71,11 @@ inline PointTypePose trans2PointTypePose(float transformIn[]) {
   thisPose6D.yaw = transformIn[2];
   return thisPose6D;
 }
+
+inline Odometry trans2Odometry(double stamp, float transformIn[]) {
+  return Odometry{
+      stamp,
+      rpy2quat((double)transformIn[0], (double)transformIn[1],
+               (double)transformIn[2]),
+      Eigen::Vector3d(transformIn[3], transformIn[4], transformIn[5])};
+}

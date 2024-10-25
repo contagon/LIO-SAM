@@ -10,11 +10,11 @@ find_package(OpenMP REQUIRED)
 ###########
 ## Build ##
 ###########
-# IMU Preintegration
 add_library(
     ${PROJECT_NAME} 
-    src/featureExtraction.cpp 
+    src/imuPreintegration.cpp
     src/imageProjection.cpp 
+    src/featureExtraction.cpp 
     src/mapOptimization.cpp
 )
 target_link_libraries(

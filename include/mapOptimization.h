@@ -140,7 +140,8 @@ private:
 public:
   MapOptimization(LioSamParams &params);
 
-  Eigen::Affine3f laserCloudInfoHandler(const CloudInfo<PointType> &cloudInfo);
+  std::optional<Odometry>
+  laserCloudInfoHandler(const CloudInfo<PointType> &cloudInfo);
 
   // Getters
   // Return the most recent features in the body pose

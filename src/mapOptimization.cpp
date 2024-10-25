@@ -82,7 +82,7 @@ void MapOptimization::allocateMemory() {
   matP = cv::Mat(6, 6, CV_32F, cv::Scalar::all(0));
 }
 
-Eigen::Affine3f
+std::optional<Odometry>
 MapOptimization::laserCloudInfoHandler(const CloudInfo<PointType> &cloudInfo) {
   // extract time stamp
   timeLaserInfoCur = cloudInfo.stamp;
@@ -102,9 +102,10 @@ MapOptimization::laserCloudInfoHandler(const CloudInfo<PointType> &cloudInfo) {
     extractSurroundingKeyFrames();
     downsampleCurrentScan();
     scan2MapOptimization(cloudInfo);
+    return trans2Odometry(timeLaserInfoCur, transformTobeMapped);
   }
 
-  return trans2Affine3f(transformTobeMapped);
+  return {};
 }
 
 void MapOptimization::pointAssociateToMap(PointType const *const pi,

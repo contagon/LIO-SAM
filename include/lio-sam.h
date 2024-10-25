@@ -1,37 +1,40 @@
 // TODO: Eventually reintroduce ROS wrapper
 #include "featureExtraction.h"
 #include "imageProjection.h"
+#include "imuPreintegration.h"
 #include "mapOptimization.h"
 #include "types.h"
 #include <Eigen/src/Geometry/Transform.h>
 
 class LIOSAM {
 private:
-  Eigen::Affine3f pose;
+  Odometry pose;
 
-  // TransformFusion tf;
+  LioSamParams params_;
+
+  IMUPreintegration imuPreintegrator;
   ImageProjection imageProjector;
   FeatureExtraction featureExtractor;
   MapOptimization mapOptimizer;
 
 public:
   LIOSAM(LioSamParams params)
-      : featureExtractor(params), imageProjector(params), mapOptimizer(params) {
-  }
+      : params_(params), imuPreintegrator(params), featureExtractor(params),
+        imageProjector(params), mapOptimizer(params) {}
   ~LIOSAM();
 
-  void addImuMeasurement() {
-
+  void addImuMeasurement(const Imu imuMsg) {
     // Simulate sending imu measurement to all of the nodes
-    // odom_topic + _incremental
-    // tf.imuOdometryHandler(odom, stamp);
-    // imageProjector.imuHandler(const Imu &imuMsg);
+    auto odometry = imuPreintegrator.imuHandler(imuMsg);
+    imageProjector.imuHandler(imuMsg);
 
     // Everywhere the imu node sends imu_incremental to
-    // imageProjector.odometryHandler(const Odometry &odometryMsg);
+    if (odometry.has_value()) {
+      imageProjector.odometryHandler(odometry.value());
+    }
   }
 
-  void
+  Odometry
   addLidarMeasurement(double stamp,
                       const pcl::PointCloud<PointXYZIRT>::Ptr laserCloudMsg) {
     // Deskew
@@ -43,11 +46,17 @@ public:
       featureExtractor.processCloud(cloud_info);
 
       // Add scan to map
-      pose = mapOptimizer.laserCloudInfoHandler(cloud_info);
+      auto new_pose = mapOptimizer.laserCloudInfoHandler(cloud_info);
 
+      if (new_pose.has_value()) {
+        pose = new_pose.value();
+        imuPreintegrator.odometryHandler(pose);
+      }
       // Simulate sending odometry to the imu
       // /lio_sam/mapping/odometry
       // tf.lidarOdometryHandler(odom, stamp);
     }
+
+    return pose;
   }
 };
