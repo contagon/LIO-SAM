@@ -1,4 +1,6 @@
 #include "mapOptimization.h"
+#include "utils.h"
+#include <Eigen/src/Geometry/Transform.h>
 
 MapOptimization::MapOptimization(LioSamParams &params) : params_(params) {
   ISAM2Params parameters;
@@ -80,7 +82,7 @@ void MapOptimization::allocateMemory() {
   matP = cv::Mat(6, 6, CV_32F, cv::Scalar::all(0));
 }
 
-std::optional<Eigen::Affine3f>
+Eigen::Affine3f
 MapOptimization::laserCloudInfoHandler(const CloudInfo<PointType> &cloudInfo) {
   // extract time stamp
   timeLaserInfoCur = cloudInfo.stamp;
@@ -100,11 +102,9 @@ MapOptimization::laserCloudInfoHandler(const CloudInfo<PointType> &cloudInfo) {
     extractSurroundingKeyFrames();
     downsampleCurrentScan();
     scan2MapOptimization(cloudInfo);
-    saveKeyFramesAndFactor();
-    return trans2Affine3f(transformTobeMapped);
-  } else {
-    return {};
   }
+
+  return trans2Affine3f(transformTobeMapped);
 }
 
 void MapOptimization::pointAssociateToMap(PointType const *const pi,
@@ -151,36 +151,6 @@ MapOptimization::transformPointCloud(pcl::PointCloud<PointType>::Ptr cloudIn,
     cloudOut->points[i].intensity = pointFrom.intensity;
   }
   return cloudOut;
-}
-
-gtsam::Pose3 MapOptimization::pclPointTogtsamPose3(PointTypePose thisPoint) {
-  return gtsam::Pose3(gtsam::Rot3::RzRyRx(double(thisPoint.roll),
-                                          double(thisPoint.pitch),
-                                          double(thisPoint.yaw)),
-                      gtsam::Point3(double(thisPoint.x), double(thisPoint.y),
-                                    double(thisPoint.z)));
-}
-
-gtsam::Pose3 MapOptimization::trans2gtsamPose(float transformIn[]) {
-  return gtsam::Pose3(
-      gtsam::Rot3::RzRyRx(transformIn[0], transformIn[1], transformIn[2]),
-      gtsam::Point3(transformIn[3], transformIn[4], transformIn[5]));
-}
-
-Eigen::Affine3f MapOptimization::pclPointToAffine3f(PointTypePose thisPoint) {
-  return pcl::getTransformation(thisPoint.x, thisPoint.y, thisPoint.z,
-                                thisPoint.roll, thisPoint.pitch, thisPoint.yaw);
-}
-
-PointTypePose MapOptimization::trans2PointTypePose(float transformIn[]) {
-  PointTypePose thisPose6D;
-  thisPose6D.x = transformIn[3];
-  thisPose6D.y = transformIn[4];
-  thisPose6D.z = transformIn[5];
-  thisPose6D.roll = transformIn[0];
-  thisPose6D.pitch = transformIn[1];
-  thisPose6D.yaw = transformIn[2];
-  return thisPose6D;
 }
 
 bool MapOptimization::saveMap() {
@@ -927,33 +897,6 @@ float MapOptimization::constraintTransformation(float value, float limit) {
   return value;
 }
 
-bool MapOptimization::saveFrame() {
-  if (cloudKeyPoses3D->points.empty())
-    return true;
-
-  if (params_.sensor == SensorType::LIVOX) {
-    if (timeLaserInfoCur - cloudKeyPoses6D->back().time > 1.0)
-      return true;
-  }
-
-  Eigen::Affine3f transStart = pclPointToAffine3f(cloudKeyPoses6D->back());
-  Eigen::Affine3f transFinal = pcl::getTransformation(
-      transformTobeMapped[3], transformTobeMapped[4], transformTobeMapped[5],
-      transformTobeMapped[0], transformTobeMapped[1], transformTobeMapped[2]);
-  Eigen::Affine3f transBetween = transStart.inverse() * transFinal;
-  float x, y, z, roll, pitch, yaw;
-  pcl::getTranslationAndEulerAngles(transBetween, x, y, z, roll, pitch, yaw);
-
-  if (abs(roll) < params_.surroundingkeyframeAddingAngleThreshold &&
-      abs(pitch) < params_.surroundingkeyframeAddingAngleThreshold &&
-      abs(yaw) < params_.surroundingkeyframeAddingAngleThreshold &&
-      sqrt(x * x + y * y + z * z) <
-          params_.surroundingkeyframeAddingDistThreshold)
-    return false;
-
-  return true;
-}
-
 void MapOptimization::addOdomFactor() {
   if (cloudKeyPoses3D->points.empty()) {
     noiseModel::Diagonal::shared_ptr priorNoise =
@@ -975,74 +918,4 @@ void MapOptimization::addOdomFactor() {
         poseFrom.between(poseTo), odometryNoise));
     initialEstimate.insert(cloudKeyPoses3D->size(), poseTo);
   }
-}
-
-void MapOptimization::saveKeyFramesAndFactor() {
-  if (saveFrame() == false)
-    return;
-
-  // odom factor
-  addOdomFactor();
-
-  // cout << "****************************************************" << endl;
-  // gtSAMgraph.print("GTSAM Graph:\n");
-
-  // update iSAM
-  isam->update(gtSAMgraph, initialEstimate);
-  isam->update();
-
-  gtSAMgraph.resize(0);
-  initialEstimate.clear();
-
-  // save key poses
-  PointType thisPose3D;
-  PointTypePose thisPose6D;
-  Pose3 latestEstimate;
-
-  isamCurrentEstimate = isam->calculateEstimate();
-  latestEstimate =
-      isamCurrentEstimate.at<Pose3>(isamCurrentEstimate.size() - 1);
-  // cout << "****************************************************" << endl;
-  // isamCurrentEstimate.print("Current estimate: ");
-
-  thisPose3D.x = latestEstimate.translation().x();
-  thisPose3D.y = latestEstimate.translation().y();
-  thisPose3D.z = latestEstimate.translation().z();
-  thisPose3D.intensity = cloudKeyPoses3D->size(); // this can be used as index
-  cloudKeyPoses3D->push_back(thisPose3D);
-
-  thisPose6D.x = thisPose3D.x;
-  thisPose6D.y = thisPose3D.y;
-  thisPose6D.z = thisPose3D.z;
-  thisPose6D.intensity = thisPose3D.intensity; // this can be used as index
-  thisPose6D.roll = latestEstimate.rotation().roll();
-  thisPose6D.pitch = latestEstimate.rotation().pitch();
-  thisPose6D.yaw = latestEstimate.rotation().yaw();
-  thisPose6D.time = timeLaserInfoCur;
-  cloudKeyPoses6D->push_back(thisPose6D);
-
-  // cout << "****************************************************" << endl;
-  // cout << "Pose covariance:" << endl;
-  // cout << isam->marginalCovariance(isamCurrentEstimate.size()-1) << endl <<
-  // endl;
-
-  // save updated transform
-  transformTobeMapped[0] = latestEstimate.rotation().roll();
-  transformTobeMapped[1] = latestEstimate.rotation().pitch();
-  transformTobeMapped[2] = latestEstimate.rotation().yaw();
-  transformTobeMapped[3] = latestEstimate.translation().x();
-  transformTobeMapped[4] = latestEstimate.translation().y();
-  transformTobeMapped[5] = latestEstimate.translation().z();
-
-  // save all the received edge and surf points
-  pcl::PointCloud<PointType>::Ptr thisCornerKeyFrame(
-      new pcl::PointCloud<PointType>());
-  pcl::PointCloud<PointType>::Ptr thisSurfKeyFrame(
-      new pcl::PointCloud<PointType>());
-  pcl::copyPointCloud(*laserCloudCornerLastDS, *thisCornerKeyFrame);
-  pcl::copyPointCloud(*laserCloudSurfLastDS, *thisSurfKeyFrame);
-
-  // save key frame cloud
-  cornerCloudKeyFrames.push_back(thisCornerKeyFrame);
-  surfCloudKeyFrames.push_back(thisSurfKeyFrame);
 }

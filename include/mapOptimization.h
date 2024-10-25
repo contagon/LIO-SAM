@@ -1,5 +1,6 @@
+#pragma once
+
 #include "types.h"
-#include "utils.h"
 
 #include <Eigen/src/Geometry/Quaternion.h>
 #include <Eigen/src/Geometry/Transform.h>
@@ -31,7 +32,7 @@ using symbol_shorthand::X; // Pose3 (x,y,z,r,p,y)
 
 class MapOptimization {
 
-public:
+private:
   LioSamParams params_;
 
   // gtsam
@@ -100,32 +101,13 @@ public:
 
   Eigen::Affine3f transPointAssociateToMap;
 
-  MapOptimization(LioSamParams &params);
-
-  // Return the most recent features in the body pose
-  pcl::PointCloud<PointType>::Ptr getMostRecentFrame();
-
   void allocateMemory();
-
-  std::optional<Eigen::Affine3f>
-  laserCloudInfoHandler(const CloudInfo<PointType> &cloudInfo);
 
   void pointAssociateToMap(PointType const *const pi, PointType *const po);
 
   pcl::PointCloud<PointType>::Ptr
   transformPointCloud(pcl::PointCloud<PointType>::Ptr cloudIn,
                       PointTypePose *transformIn);
-
-  gtsam::Pose3 pclPointTogtsamPose3(PointTypePose thisPoint);
-  gtsam::Pose3 trans2gtsamPose(float transformIn[]);
-
-  Eigen::Affine3f pclPointToAffine3f(PointTypePose thisPoint);
-
-  PointTypePose trans2PointTypePose(float transformIn[]);
-
-  bool saveMap();
-
-  pcl::PointCloud<PointType>::Ptr getGlobalMap();
 
   void updateInitialGuess(const CloudInfo<PointType> &cloudInfo);
 
@@ -153,8 +135,18 @@ public:
 
   float constraintTransformation(float value, float limit);
 
-  bool saveFrame();
-
   void addOdomFactor();
-  void saveKeyFramesAndFactor();
+
+public:
+  MapOptimization(LioSamParams &params);
+
+  Eigen::Affine3f laserCloudInfoHandler(const CloudInfo<PointType> &cloudInfo);
+
+  // Getters
+  // Return the most recent features in the body pose
+  pcl::PointCloud<PointType>::Ptr getMostRecentFrame();
+
+  bool saveMap();
+
+  pcl::PointCloud<PointType>::Ptr getGlobalMap();
 };

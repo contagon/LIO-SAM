@@ -1,17 +1,23 @@
 // TODO: Eventually reintroduce ROS wrapper
 #include "featureExtraction.h"
 #include "imageProjection.h"
+#include "mapOptimization.h"
 #include "types.h"
+#include <Eigen/src/Geometry/Transform.h>
 
 class LIOSAM {
 private:
+  Eigen::Affine3f pose;
+
   // TransformFusion tf;
   ImageProjection imageProjector;
   FeatureExtraction featureExtractor;
+  MapOptimization mapOptimizer;
 
 public:
   LIOSAM(LioSamParams params)
-      : featureExtractor(params), imageProjector(params) {}
+      : featureExtractor(params), imageProjector(params), mapOptimizer(params) {
+  }
   ~LIOSAM();
 
   void addImuMeasurement() {
@@ -36,11 +42,10 @@ public:
       auto cloud_info = maybe_cloudinfo.value();
       featureExtractor.processCloud(cloud_info);
 
-      // mapOptimization
-      // mapOptimization.laserCloudInfoHandler(cloud_info);
-      // mapOptimization.somethingsomething
+      // Add scan to map
+      pose = mapOptimizer.laserCloudInfoHandler(cloud_info);
 
-      // Simulate sending odometry to all of the nodes
+      // Simulate sending odometry to the imu
       // /lio_sam/mapping/odometry
       // tf.lidarOdometryHandler(odom, stamp);
     }
