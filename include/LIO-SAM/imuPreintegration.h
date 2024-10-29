@@ -20,6 +20,8 @@ using gtsam::symbol_shorthand::B; // Bias  (ax,ay,az,gx,gy,gz)
 using gtsam::symbol_shorthand::V; // Vel   (xdot,ydot,zdot)
 using gtsam::symbol_shorthand::X; // Pose3 (x,y,z,r,p,y)
 
+namespace lio_sam {
+
 class IMUPreintegration {
 private:
   LioSamParams params_;
@@ -73,9 +75,13 @@ private:
                         const gtsam::imuBias::ConstantBias &biasCur);
 
 public:
+  IMUPreintegration() = default;
+
   IMUPreintegration(const LioSamParams &params);
 
   void odometryHandler(const Odometry &odomMsg);
 
   std::optional<Odometry> imuHandler(const Imu &imu_raw);
 };
+
+} // namespace lio_sam

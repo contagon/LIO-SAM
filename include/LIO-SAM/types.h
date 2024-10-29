@@ -20,6 +20,8 @@
 #include <pcl/point_cloud.h>
 #include <stddef.h>
 
+namespace lio_sam {
+
 struct Imu {
   double stamp;
   Eigen::Vector3d gyro;
@@ -167,12 +169,7 @@ struct PointXYZIRT {
   uint16_t ring;
   float time;
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-} EIGEN_ALIGN16;
-POINT_CLOUD_REGISTER_POINT_STRUCT(
-    PointXYZIRT,
-    (float, x, x)(float, y, y)(float, z, z)(float, intensity,
-                                            intensity)(std::uint16_t, ring,
-                                                       ring)(float, time, time))
+};
 
 struct PointTypePose {
   PCL_ADD_POINT4D
@@ -182,10 +179,18 @@ struct PointTypePose {
   float yaw;
   double time;
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW // make sure our new allocators are aligned
-} EIGEN_ALIGN16; // enforce SSE padding for correct memory alignment
+}; // enforce SSE padding for correct memory alignment
+
+} // namespace lio_sam
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(
-    PointTypePose,
+    lio_sam::PointXYZIRT,
+    (float, x, x)(float, y, y)(float, z, z)(float, intensity,
+                                            intensity)(std::uint16_t, ring,
+                                                       ring)(float, time, time))
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+    lio_sam::PointTypePose,
     (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(
         float, roll, roll)(float, pitch, pitch)(float, yaw, yaw)(double, time,
                                                                  time))

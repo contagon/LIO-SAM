@@ -1,5 +1,7 @@
-#include "imageProjection.h"
-#include "utils.h"
+#include "LIO-SAM/imageProjection.h"
+#include "LIO-SAM/utils.h"
+
+namespace lio_sam {
 
 // -------------------------- Public Methods -------------------------- //
 ImageProjection::ImageProjection(const LioSamParams &params)
@@ -432,3 +434,5 @@ void ImageProjection::cloudExtraction() {
     cloudInfo.endRingIndex[i] = count - 1 - 5;
   }
 }
+
+} // namespace lio_sam

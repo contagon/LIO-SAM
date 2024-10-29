@@ -1,4 +1,6 @@
-#include "featureExtraction.h"
+#include "LIO-SAM/featureExtraction.h"
+
+namespace lio_sam {
 
 FeatureExtraction::FeatureExtraction(const LioSamParams &params)
     : params_(params) {
@@ -199,3 +201,5 @@ void FeatureExtraction::extractFeatures(const CloudInfo<PointType> &cloudInfo) {
     *surfaceCloud += *surfaceCloudScanDS;
   }
 }
+
+} // namespace lio_sam

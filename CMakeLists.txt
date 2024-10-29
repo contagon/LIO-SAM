@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(lio_sam)
 
-find_package(OpenCV REQUIRED QUIET)
-find_package(GTSAM REQUIRED QUIET)
-find_package(PCL REQUIRED QUIET)
+find_package(GTSAM REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(PCL REQUIRED)
 find_package(OpenMP REQUIRED)
 
 
@@ -24,12 +24,5 @@ target_link_libraries(
         ${OpenMP_CXX_FLAGS} 
         gtsam
 )
-target_include_directories(
-    ${PROJECT_NAME} PUBLIC 
-        "${CMAKE_CURRENT_SOURCE_DIR}/include" 
-        ${PCL_INCLUDE_DIRS} 
-        ${OpenCV_INCLUDE_DIRS} 
-        ${GTSAM_INCLUDE_DIR}
-)
-target_compile_features(
-    ${PROJECT_NAME} PRIVATE cxx_std_17)
+target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)

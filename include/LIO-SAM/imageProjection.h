@@ -6,6 +6,8 @@
 #include <optional>
 #include <pcl/point_cloud.h>
 
+namespace lio_sam {
+
 const int queueLength = 2000;
 
 class ImageProjection {
@@ -75,3 +77,5 @@ public:
   cloudHandler(double stamp,
                const pcl::PointCloud<PointXYZIRT>::Ptr laserCloudMsg);
 };
+
+} // namespace lio_sam

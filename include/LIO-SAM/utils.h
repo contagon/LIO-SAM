@@ -6,6 +6,8 @@
 
 #include <gtsam/geometry/Pose3.h>
 
+namespace lio_sam {
+
 inline float pointDistance(PointType p) {
   return sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
 }
@@ -79,3 +81,5 @@ inline Odometry trans2Odometry(double stamp, float transformIn[]) {
                (double)transformIn[2]),
       Eigen::Vector3d(transformIn[3], transformIn[4], transformIn[5])};
 }
+
+} // namespace lio_sam

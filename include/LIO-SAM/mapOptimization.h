@@ -30,6 +30,8 @@ using symbol_shorthand::G; // GPS pose
 using symbol_shorthand::V; // Vel   (xdot,ydot,zdot)
 using symbol_shorthand::X; // Pose3 (x,y,z,r,p,y)
 
+namespace lio_sam {
+
 class MapOptimization {
 
 private:
@@ -151,3 +153,5 @@ public:
 
   pcl::PointCloud<PointType>::Ptr getGlobalMap();
 };
+
+} // namespace lio_sam

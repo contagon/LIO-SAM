@@ -1,6 +1,7 @@
-#include "mapOptimization.h"
-#include "utils.h"
-#include <Eigen/src/Geometry/Transform.h>
+#include "LIO-SAM/mapOptimization.h"
+#include "LIO-SAM/utils.h"
+
+namespace lio_sam {
 
 MapOptimization::MapOptimization(LioSamParams &params) : params_(params) {
   ISAM2Params parameters;
@@ -920,3 +921,5 @@ void MapOptimization::addOdomFactor() {
     initialEstimate.insert(cloudKeyPoses3D->size(), poseTo);
   }
 }
+
+} // namespace lio_sam

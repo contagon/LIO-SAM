@@ -1,8 +1,10 @@
-#include "imuPreintegration.h"
+#include "LIO-SAM/imuPreintegration.h"
 
 using gtsam::symbol_shorthand::B; // Bias  (ax,ay,az,gx,gy,gz)
 using gtsam::symbol_shorthand::V; // Vel   (xdot,ydot,zdot)
 using gtsam::symbol_shorthand::X; // Pose3 (x,y,z,r,p,y)
+
+namespace lio_sam {
 
 IMUPreintegration::IMUPreintegration(const LioSamParams &params)
     : params_(params) {
@@ -313,9 +315,11 @@ std::optional<Odometry> IMUPreintegration::imuHandler(const Imu &imu_raw) {
   gtsam::Pose3 lidarPose = imuPose.compose(imu2Lidar);
   Odometry odometry{
       .stamp = thisImu.stamp,
-      .position = lidarPose.translation(),
       .orientation = lidarPose.rotation().toQuaternion(),
+      .position = lidarPose.translation(),
   };
 
   return odometry;
 }
+
+} // namespace lio_sam

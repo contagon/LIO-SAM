@@ -5,6 +5,9 @@
 #include "mapOptimization.h"
 #include "types.h"
 #include <Eigen/src/Geometry/Transform.h>
+#include <pcl/point_cloud.h>
+
+namespace lio_sam {
 
 class LIOSAM {
 private:
@@ -22,6 +25,16 @@ public:
       : params_(params), imuPreintegrator(params), featureExtractor(params),
         imageProjector(params), mapOptimizer(params) {}
   ~LIOSAM();
+
+  Odometry getPose() { return pose; }
+
+  pcl::PointCloud<PointType>::Ptr getMap() {
+    return mapOptimizer.getGlobalMap();
+  }
+
+  pcl::PointCloud<PointType>::Ptr getMostRecentFrame() {
+    return mapOptimizer.getMostRecentFrame();
+  }
 
   void addImuMeasurement(const Imu imuMsg) {
     // Simulate sending imu measurement to all of the nodes
@@ -48,15 +61,15 @@ public:
       // Add scan to map
       auto new_pose = mapOptimizer.laserCloudInfoHandler(cloud_info);
 
+      // If we successfully update the pose, send it to the imuPreintegrator
       if (new_pose.has_value()) {
         pose = new_pose.value();
         imuPreintegrator.odometryHandler(pose);
       }
-      // Simulate sending odometry to the imu
-      // /lio_sam/mapping/odometry
-      // tf.lidarOdometryHandler(odom, stamp);
     }
 
     return pose;
   }
 };
+
+} // namespace lio_sam

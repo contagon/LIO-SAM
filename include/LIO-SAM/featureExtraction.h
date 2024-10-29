@@ -1,5 +1,7 @@
 #include "types.h"
 
+namespace lio_sam {
+
 struct smoothness_t {
   float value;
   size_t ind;
@@ -32,3 +34,5 @@ public:
   FeatureExtraction(const LioSamParams &params);
   void processCloud(CloudInfo<PointType> &cloudInfo);
 };
+
+} // namespace lio_sam
