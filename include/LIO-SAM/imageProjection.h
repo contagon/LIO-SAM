@@ -17,7 +17,7 @@ private:
 
   LioSamParams params_;
 
-  std::deque<Imu> imuQueue;
+  std::deque<std::pair<double, Eigen::Vector3d>> gyroQueue;
   std::deque<Odometry> odomQueue;
 
   std::deque<std::pair<double, pcl::PointCloud<PointXYZIRT>::Ptr>> cloudQueue;

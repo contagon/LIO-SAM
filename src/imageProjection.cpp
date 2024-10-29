@@ -12,11 +12,11 @@ ImageProjection::ImageProjection(const LioSamParams &params)
   pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
 }
 
-void ImageProjection::imuHandler(const Imu &imuMsg) {
-  auto thisImu = params_.imuConverter(imuMsg);
-
+// Store gyro for rotation deskewing
+void ImageProjection::imuHandler(const Imu &imu) {
+  auto gyro = params_.lidar_R_imu * imu.gyro;
   std::lock_guard<std::mutex> lock1(imuLock);
-  imuQueue.push_back(thisImu);
+  gyroQueue.push_back(std::make_pair(imu.stamp, gyro));
 
   // debug IMU data
   // cout << std::setprecision(6);
@@ -37,7 +37,8 @@ void ImageProjection::imuHandler(const Imu &imuMsg) {
   // imuYaw << endl << endl;
 }
 
-// TODO: What does this do? It's published from the IMU node.
+// Store odometry from IMU Preintegration to use for initial guesses and for
+// translation deskewing
 void ImageProjection::odometryHandler(const Odometry &odometryMsg) {
   std::lock_guard<std::mutex> lock2(odoLock);
   odomQueue.push_back(odometryMsg);
@@ -126,8 +127,8 @@ bool ImageProjection::deskewInfo() {
   std::lock_guard<std::mutex> lock2(odoLock);
 
   // make sure IMU data available for the scan
-  if (imuQueue.empty() || imuQueue.front().stamp > timeScanCur ||
-      imuQueue.back().stamp < timeScanEnd) {
+  if (gyroQueue.empty() || gyroQueue.front().first > timeScanCur ||
+      gyroQueue.back().first < timeScanEnd) {
     std::cout << "Waiting for IMU data ..." << std::endl;
     return false;
   }
@@ -139,29 +140,25 @@ bool ImageProjection::deskewInfo() {
   return true;
 }
 
+// IMU is used for deskewing the rotation
 void ImageProjection::imuDeskewInfo() {
   cloudInfo.imuAvailable = false;
 
-  while (!imuQueue.empty()) {
-    if (imuQueue.front().stamp < timeScanCur - 0.01)
-      imuQueue.pop_front();
+  while (!gyroQueue.empty()) {
+    if (gyroQueue.front().first < timeScanCur - 0.01)
+      gyroQueue.pop_front();
     else
       break;
   }
 
-  if (imuQueue.empty())
+  if (gyroQueue.empty())
     return;
 
   imuPointerCur = 0;
 
-  for (int i = 0; i < (int)imuQueue.size(); ++i) {
-    Imu thisImuMsg = imuQueue[i];
-    double currentImuTime = thisImuMsg.stamp;
-
-    // get roll, pitch, and yaw estimation for this scan
-    if (currentImuTime <= timeScanCur)
-      quat2rpy(thisImuMsg.orientation, &cloudInfo.imuRollInit,
-               &cloudInfo.imuPitchInit, &cloudInfo.imuYawInit);
+  for (int i = 0; i < (int)gyroQueue.size(); ++i) {
+    auto thisImuMsg = gyroQueue[i];
+    double currentImuTime = thisImuMsg.first;
 
     if (currentImuTime > timeScanEnd + 0.01)
       break;
@@ -177,9 +174,9 @@ void ImageProjection::imuDeskewInfo() {
 
     // get angular velocity
     double angular_x, angular_y, angular_z;
-    angular_x = thisImuMsg.gyro.x();
-    angular_y = thisImuMsg.gyro.y();
-    angular_z = thisImuMsg.gyro.z();
+    angular_x = thisImuMsg.second.x();
+    angular_y = thisImuMsg.second.y();
+    angular_z = thisImuMsg.second.z();
 
     // integrate rotation
     double timeDiff = currentImuTime - imuTime[imuPointerCur - 1];
@@ -198,6 +195,7 @@ void ImageProjection::imuDeskewInfo() {
   cloudInfo.imuAvailable = true;
 }
 
+// Odometry is used for deskewing the position
 void ImageProjection::odomDeskewInfo() {
   cloudInfo.odomAvailable = false;
 
@@ -214,7 +212,7 @@ void ImageProjection::odomDeskewInfo() {
   if (odomQueue.front().stamp > timeScanCur)
     return;
 
-  // get start odometry at the beinning of the scan
+  // get start odometry at the beginning of the scan
   Odometry startOdomMsg;
 
   for (int i = 0; i < (int)odomQueue.size(); ++i) {
@@ -306,8 +304,8 @@ void ImageProjection::findRotation(double pointTime, float *rotXCur,
   }
 }
 
-void findPosition(double relTime, float *posXCur, float *posYCur,
-                  float *posZCur) {
+void ImageProjection::findPosition(double relTime, float *posXCur,
+                                   float *posYCur, float *posZCur) {
   *posXCur = 0;
   *posYCur = 0;
   *posZCur = 0;

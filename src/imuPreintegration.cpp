@@ -1,4 +1,5 @@
 #include "LIO-SAM/imuPreintegration.h"
+#include "LIO-SAM/types.h"
 
 using gtsam::symbol_shorthand::B; // Bias  (ax,ay,az,gx,gy,gz)
 using gtsam::symbol_shorthand::V; // Vel   (xdot,ydot,zdot)
@@ -8,14 +9,9 @@ namespace lio_sam {
 
 IMUPreintegration::IMUPreintegration(const LioSamParams &params)
     : params_(params) {
-  imu2Lidar =
-      gtsam::Pose3(gtsam::Rot3(1, 0, 0, 0),
-                   gtsam::Point3(-params_.extTrans.x(), -params_.extTrans.y(),
-                                 -params_.extTrans.z()));
   lidar2Imu =
-      gtsam::Pose3(gtsam::Rot3(1, 0, 0, 0),
-                   gtsam::Point3(params_.extTrans.x(), params_.extTrans.y(),
-                                 params_.extTrans.z()));
+      gtsam::Pose3(gtsam::Rot3(params_.lidar_R_imu), params_.lidar_P_imu);
+  imu2Lidar = lidar2Imu.inverse();
 
   boost::shared_ptr<gtsam::PreintegrationParams> p =
       gtsam::PreintegrationParams::MakeSharedU(params_.imuGravity);
@@ -29,8 +25,8 @@ IMUPreintegration::IMUPreintegration(const LioSamParams &params)
       gtsam::Matrix33::Identity(3, 3) *
       pow(1e-4, 2); // error committed in integrating position from velocities
   gtsam::imuBias::ConstantBias prior_imu_bias(
-      (gtsam::Vector(6) << 0, 0, 0, 0, 0, 0).finished());
-  ; // assume zero initial bias
+      (gtsam::Vector(6) << 0, 0, 0, 0, 0, 0)
+          .finished()); // assume zero initial bias
 
   priorPoseNoise = gtsam::noiseModel::Diagonal::Sigmas(
       (gtsam::Vector(6) << 1e-2, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2)
@@ -114,7 +110,6 @@ void IMUPreintegration::odometryHandler(const Odometry &odomMsg) {
     gtsam::PriorFactor<gtsam::Vector3> priorVel(V(0), prevVel_, priorVelNoise);
     graphFactors.add(priorVel);
     // initial bias
-    prevBias_ = gtsam::imuBias::ConstantBias();
     gtsam::PriorFactor<gtsam::imuBias::ConstantBias> priorBias(B(0), prevBias_,
                                                                priorBiasNoise);
     graphFactors.add(priorBias);
@@ -284,16 +279,46 @@ bool IMUPreintegration::failureDetection(
   return false;
 }
 
-std::optional<Odometry> IMUPreintegration::imuHandler(const Imu &imu_raw) {
-  std::lock_guard<std::mutex> lock(mtx);
+Odometry IMUPreintegration::initializePose() {
+  Eigen::Vector3d avg_w = Eigen::Vector3d::Zero();
+  Eigen::Vector3d avg_a = Eigen::Vector3d::Zero();
+  for (const auto &imu : imuQueImu) {
+    avg_w += imu.gyro;
+    avg_a += imu.acc;
+  }
+  avg_w /= static_cast<double>(imuQueImu.size());
+  avg_a /= static_cast<double>(imuQueImu.size());
 
-  Imu thisImu = params_.imuConverter(imu_raw);
+  Eigen::Vector3d ez_W = Eigen::Vector3d::UnitZ();
+  Eigen::Vector3d e_acc = avg_a /= avg_a.norm();
+  double angle = std::acos(ez_W.dot(e_acc));
+  Eigen::Vector3d rotDelta = ez_W.cross(e_acc);
+
+  Eigen::Quaterniond origin_R_imu(
+      Eigen::AngleAxisd(angle / rotDelta.norm(), rotDelta));
+  Eigen::Quaterniond origin_R_lidar =
+      origin_R_imu * params_.lidar_R_imu.inverse();
+
+  // Compute bias estimates
+  Eigen::Vector3d grav = Eigen::Vector3d(0., 0., params_.imuGravity);
+  avg_a = origin_R_imu.inverse() * (origin_R_imu * avg_a + grav);
+  prevBias_ = gtsam::imuBias::ConstantBias();
+
+  return Odometry{
+      imuQueImu.back().stamp,
+      origin_R_lidar,
+      Eigen::Vector3d::Zero(),
+  };
+}
+
+Odometry IMUPreintegration::imuHandler(const Imu &thisImu) {
+  std::lock_guard<std::mutex> lock(mtx);
 
   imuQueOpt.push_back(thisImu);
   imuQueImu.push_back(thisImu);
 
   if (doneFirstOpt == false)
-    return {};
+    return initializePose();
 
   double imuTime = thisImu.stamp;
   double dt = (lastImuT_imu < 0) ? (1.0 / 500.0) : (imuTime - lastImuT_imu);

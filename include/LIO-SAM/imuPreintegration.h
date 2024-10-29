@@ -5,6 +5,7 @@
 #include <gtsam/inference/Symbol.h>
 #include <gtsam/navigation/CombinedImuFactor.h>
 #include <gtsam/navigation/GPSFactor.h>
+#include <gtsam/navigation/ImuBias.h>
 #include <gtsam/navigation/ImuFactor.h>
 #include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
 #include <gtsam/nonlinear/Marginals.h>
@@ -45,7 +46,8 @@ private:
   gtsam::Pose3 prevPose_;
   gtsam::Vector3 prevVel_;
   gtsam::NavState prevState_;
-  gtsam::imuBias::ConstantBias prevBias_;
+  gtsam::imuBias::ConstantBias prevBias_ =
+      gtsam::imuBias::ConstantBias::Identity();
 
   gtsam::NavState prevStateOdom;
   gtsam::imuBias::ConstantBias prevBiasOdom;
@@ -68,6 +70,8 @@ private:
   // T_lb: tramsform points from imu frame to lidar frame
   gtsam::Pose3 lidar2Imu;
 
+  Odometry initializePose();
+
   void resetOptimization();
   void resetParams();
 
@@ -81,7 +85,7 @@ public:
 
   void odometryHandler(const Odometry &odomMsg);
 
-  std::optional<Odometry> imuHandler(const Imu &imu_raw);
+  Odometry imuHandler(const Imu &imu_raw);
 };
 
 } // namespace lio_sam

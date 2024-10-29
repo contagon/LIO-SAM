@@ -24,7 +24,7 @@ public:
   LIOSAM(LioSamParams params)
       : params_(params), imuPreintegrator(params), featureExtractor(params),
         imageProjector(params), mapOptimizer(params) {}
-  ~LIOSAM();
+  ~LIOSAM(){};
 
   Odometry getPose() { return pose; }
 
@@ -38,13 +38,14 @@ public:
 
   void addImuMeasurement(const Imu imuMsg) {
     // Simulate sending imu measurement to all of the nodes
+    std::cout << "adding to preingrator" << std::endl;
     auto odometry = imuPreintegrator.imuHandler(imuMsg);
+    std::cout << "adding to projector" << std::endl;
     imageProjector.imuHandler(imuMsg);
 
-    // Everywhere the imu node sends imu_incremental to
-    if (odometry.has_value()) {
-      imageProjector.odometryHandler(odometry.value());
-    }
+    // Everywhere the imu node sends odometry to
+    std::cout << "adding odometry to imageProjector" << std::endl;
+    imageProjector.odometryHandler(odometry);
   }
 
   Odometry

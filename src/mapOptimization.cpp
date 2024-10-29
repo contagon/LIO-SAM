@@ -316,13 +316,13 @@ void MapOptimization::updateInitialGuess(
   static Eigen::Affine3f lastImuTransformation;
   // initialization
   if (cloudKeyPoses3D->points.empty()) {
-    transformTobeMapped[0] = cloudInfo.imuRollInit;
-    transformTobeMapped[1] = cloudInfo.imuPitchInit;
-    transformTobeMapped[2] = 0;
+    transformTobeMapped[0] = cloudInfo.initialGuessRoll;
+    transformTobeMapped[1] = cloudInfo.initialGuessPitch;
+    transformTobeMapped[2] = cloudInfo.initialGuessYaw;
 
     lastImuTransformation = pcl::getTransformation(
-        0, 0, 0, cloudInfo.imuRollInit, cloudInfo.imuPitchInit,
-        cloudInfo.imuYawInit); // save imu before return;
+        0, 0, 0, cloudInfo.initialGuessRoll, cloudInfo.initialGuessPitch,
+        cloudInfo.initialGuessYaw); // save imu before return;
     return;
   }
 
@@ -350,30 +350,10 @@ void MapOptimization::updateInitialGuess(
       lastImuPreTransformation = transBack;
 
       lastImuTransformation = pcl::getTransformation(
-          0, 0, 0, cloudInfo.imuRollInit, cloudInfo.imuPitchInit,
-          cloudInfo.imuYawInit); // save imu before return;
+          0, 0, 0, cloudInfo.initialGuessRoll, cloudInfo.initialGuessPitch,
+          cloudInfo.initialGuessYaw); // save imu before return;
       return;
     }
-  }
-
-  // use imu incremental estimation for pose guess (only rotation)
-  if (cloudInfo.imuAvailable == true) {
-    Eigen::Affine3f transBack =
-        pcl::getTransformation(0, 0, 0, cloudInfo.imuRollInit,
-                               cloudInfo.imuPitchInit, cloudInfo.imuYawInit);
-    Eigen::Affine3f transIncre = lastImuTransformation.inverse() * transBack;
-
-    Eigen::Affine3f transTobe = trans2Affine3f(transformTobeMapped);
-    Eigen::Affine3f transFinal = transTobe * transIncre;
-    pcl::getTranslationAndEulerAngles(
-        transFinal, transformTobeMapped[3], transformTobeMapped[4],
-        transformTobeMapped[5], transformTobeMapped[0], transformTobeMapped[1],
-        transformTobeMapped[2]);
-
-    lastImuTransformation = pcl::getTransformation(
-        0, 0, 0, cloudInfo.imuRollInit, cloudInfo.imuPitchInit,
-        cloudInfo.imuYawInit); // save imu before return;
-    return;
   }
 }
 
@@ -859,28 +839,31 @@ void MapOptimization::scan2MapOptimization(
 }
 
 void MapOptimization::transformUpdate(const CloudInfo<PointType> &cloudInfo) {
-  if (cloudInfo.imuAvailable == true) {
-    if (std::abs(cloudInfo.imuPitchInit) < 1.4) {
-      double imuWeight = params_.imuRPYWeight;
-      Eigen::Quaterniond imuQuaternion;
-      Eigen::Quaterniond transformQuaternion;
-      double rollMid, pitchMid, yawMid;
+  // Weight actual transform with result from IMU orientation - disable
+  // if (cloudInfo.imuAvailable == true) {
+  //   if (std::abs(cloudInfo.imuPitchInit) < 1.4) {
+  //     double imuWeight = params_.imuRPYWeight;
+  //     Eigen::Quaterniond imuQuaternion;
+  //     Eigen::Quaterniond transformQuaternion;
+  //     double rollMid, pitchMid, yawMid;
 
-      // slerp roll
-      transformQuaternion = rpy2quat(double(transformTobeMapped[0]), 0.0, 0.0);
-      imuQuaternion = rpy2quat(double(cloudInfo.imuRollInit), 0.0, 0.0);
-      quat2rpy(transformQuaternion.slerp(imuWeight, imuQuaternion), &rollMid,
-               &pitchMid, &yawMid);
-      transformTobeMapped[0] = rollMid;
+  //     // slerp roll
+  //     transformQuaternion = rpy2quat(double(transformTobeMapped[0]), 0.0,
+  //     0.0); imuQuaternion = rpy2quat(double(cloudInfo.imuRollInit), 0.0,
+  //     0.0); quat2rpy(transformQuaternion.slerp(imuWeight, imuQuaternion),
+  //     &rollMid,
+  //              &pitchMid, &yawMid);
+  //     transformTobeMapped[0] = rollMid;
 
-      // slerp pitch
-      transformQuaternion = rpy2quat(0.0, double(transformTobeMapped[0]), 0.0);
-      imuQuaternion = rpy2quat(0.0, double(cloudInfo.imuRollInit), 0.0);
-      quat2rpy(transformQuaternion.slerp(imuWeight, imuQuaternion), &rollMid,
-               &pitchMid, &yawMid);
-      transformTobeMapped[1] = pitchMid;
-    }
-  }
+  //     // slerp pitch
+  //     transformQuaternion = rpy2quat(0.0, double(transformTobeMapped[0]),
+  //     0.0); imuQuaternion = rpy2quat(0.0, double(cloudInfo.imuRollInit),
+  //     0.0); quat2rpy(transformQuaternion.slerp(imuWeight, imuQuaternion),
+  //     &rollMid,
+  //              &pitchMid, &yawMid);
+  //     transformTobeMapped[1] = pitchMid;
+  //   }
+  // }
 
   transformTobeMapped[0] = constraintTransformation(
       transformTobeMapped[0], params_.rotation_tollerance);

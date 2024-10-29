@@ -26,8 +26,6 @@ struct Imu {
   double stamp;
   Eigen::Vector3d gyro;
   Eigen::Vector3d acc;
-  // TODO: Be rid
-  Eigen::Quaternion<double> orientation;
 };
 
 struct Odometry {
@@ -55,13 +53,9 @@ struct LioSamParams {
   float imuGyrBiasN;
   float imuGravity;
   float imuRPYWeight;
-  // TODO: Be rid of both of these soon enough here
-  // rotation matrix of accel -> orientation on imu
-  Eigen::Quaterniond extQRPY;
-  Eigen::Matrix3d extRPY;
   // rotation matrix of lidar -> imu
-  Eigen::Matrix3d extRot;
-  Eigen::Vector3d extTrans;
+  Eigen::Quaterniond lidar_R_imu;
+  Eigen::Vector3d lidar_P_imu;
 
   // Optionally tuned params
   // LOAM
@@ -97,27 +91,6 @@ struct LioSamParams {
   bool savePCD = false;
   std::string savePCDDirectory = "/tmp";
   float resolution = 0.2;
-
-  // TODO: I'm rather unclear what this is doing... changing frames of some
-  // sort, but I'm not 100% sure from and to what
-  Imu imuConverter(const Imu &imu_in) {
-    // rotate acceleration to lidar frame
-    Eigen::Vector3d acc = extRot * imu_in.acc;
-
-    // rotate gyroscope to lidar frame
-    Eigen::Vector3d gyro = extRot * imu_in.gyro;
-
-    // rotate roll pitch yaw
-    Eigen::Quaterniond q_final = imu_in.orientation * extQRPY;
-
-    if (sqrt(q_final.x() * q_final.x() + q_final.y() * q_final.y() +
-             q_final.z() * q_final.z() + q_final.w() * q_final.w()) < 0.1) {
-      std::cout << "Invalid quaternion, please use a 9-axis IMU!" << std::endl;
-      throw -1;
-    }
-
-    return Imu{.gyro = gyro, .acc = acc, .orientation = q_final};
-  }
 };
 
 // TODO: Should all the pointclouds here have the same type?
@@ -132,11 +105,6 @@ template <typename PointT> struct CloudInfo {
 
   std::int64_t imuAvailable;
   std::int64_t odomAvailable;
-
-  // Attitude for LOAM initialization
-  float imuRollInit;
-  float imuPitchInit;
-  float imuYawInit;
 
   // Initial guess from imu pre-integration
   float initialGuessX;
