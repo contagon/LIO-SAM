@@ -11,6 +11,8 @@ namespace lio_sam {
 
 class LIOSAM {
 private:
+  bool init_pose = false;
+  Odometry preint_odom;
   Odometry pose;
 
   LioSamParams params_;
@@ -38,14 +40,16 @@ public:
 
   void addImuMeasurement(const Imu imuMsg) {
     // Simulate sending imu measurement to all of the nodes
-    std::cout << "adding to preingrator" << std::endl;
     auto odometry = imuPreintegrator.imuHandler(imuMsg);
-    std::cout << "adding to projector" << std::endl;
     imageProjector.imuHandler(imuMsg);
 
     // Everywhere the imu node sends odometry to
-    std::cout << "adding odometry to imageProjector" << std::endl;
     imageProjector.odometryHandler(odometry);
+
+    // Save the preintegrated pose if we'll need it
+    if (!init_pose) {
+      preint_odom = odometry;
+    }
   }
 
   Odometry
@@ -53,6 +57,12 @@ public:
                       const pcl::PointCloud<PointXYZIRT>::Ptr laserCloudMsg) {
     // Deskew
     auto maybe_cloudinfo = imageProjector.cloudHandler(stamp, laserCloudMsg);
+
+    // Initialize from most recent pose from IMU odometry
+    if (!init_pose) {
+      pose = preint_odom;
+      init_pose = true;
+    }
 
     if (maybe_cloudinfo.has_value()) {
       // Extract features

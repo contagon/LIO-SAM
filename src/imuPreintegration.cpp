@@ -14,7 +14,7 @@ IMUPreintegration::IMUPreintegration(const LioSamParams &params)
   imu2Lidar = lidar2Imu.inverse();
 
   boost::shared_ptr<gtsam::PreintegrationParams> p =
-      gtsam::PreintegrationParams::MakeSharedU(params_.imuGravity);
+      gtsam::PreintegrationParams::MakeSharedD(params_.imuGravity);
   p->accelerometerCovariance =
       gtsam::Matrix33::Identity(3, 3) *
       pow(params_.imuAccNoise, 2); // acc white noise in continuous
@@ -264,6 +264,7 @@ bool IMUPreintegration::failureDetection(
   Eigen::Vector3f vel(velCur.x(), velCur.y(), velCur.z());
   if (vel.norm() > 30) {
     std::cout << "Large velocity, reset IMU-preintegration!" << std::endl;
+    std::cout << "vel: " << vel.transpose() << std::endl;
     return true;
   }
 
@@ -280,29 +281,31 @@ bool IMUPreintegration::failureDetection(
 }
 
 Odometry IMUPreintegration::initializePose() {
-  Eigen::Vector3d avg_w = Eigen::Vector3d::Zero();
+  // TODO: This is getting called later too, figure out why!
+  Eigen::Vector3d bias_w = Eigen::Vector3d::Zero();
   Eigen::Vector3d avg_a = Eigen::Vector3d::Zero();
   for (const auto &imu : imuQueImu) {
-    avg_w += imu.gyro;
+    bias_w += imu.gyro;
     avg_a += imu.acc;
   }
-  avg_w /= static_cast<double>(imuQueImu.size());
+  bias_w /= static_cast<double>(imuQueImu.size());
   avg_a /= static_cast<double>(imuQueImu.size());
 
   Eigen::Vector3d ez_W = Eigen::Vector3d::UnitZ();
-  Eigen::Vector3d e_acc = avg_a /= avg_a.norm();
+  Eigen::Vector3d e_acc = avg_a / avg_a.norm();
   double angle = std::acos(ez_W.dot(e_acc));
   Eigen::Vector3d rotDelta = ez_W.cross(e_acc);
 
   Eigen::Quaterniond origin_R_imu(
-      Eigen::AngleAxisd(angle / rotDelta.norm(), rotDelta));
+      Eigen::AngleAxisd(-angle, rotDelta / rotDelta.norm()));
   Eigen::Quaterniond origin_R_lidar =
       origin_R_imu * params_.lidar_R_imu.inverse();
 
   // Compute bias estimates
   Eigen::Vector3d grav = Eigen::Vector3d(0., 0., params_.imuGravity);
-  avg_a = origin_R_imu.inverse() * (origin_R_imu * avg_a + grav);
-  prevBias_ = gtsam::imuBias::ConstantBias();
+  Eigen::Vector3d bias_a =
+      origin_R_imu.inverse() * (origin_R_imu * avg_a + grav);
+  prevBias_ = gtsam::imuBias::ConstantBias(bias_a, bias_w);
 
   return Odometry{
       imuQueImu.back().stamp,

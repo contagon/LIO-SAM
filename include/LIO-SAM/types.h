@@ -52,7 +52,6 @@ struct LioSamParams {
   float imuAccBiasN;
   float imuGyrBiasN;
   float imuGravity;
-  float imuRPYWeight;
   // rotation matrix of lidar -> imu
   Eigen::Quaterniond lidar_R_imu;
   Eigen::Vector3d lidar_P_imu;
