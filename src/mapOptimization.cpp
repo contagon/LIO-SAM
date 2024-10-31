@@ -1,5 +1,6 @@
 #include "LIO-SAM/mapOptimization.h"
 #include "LIO-SAM/utils.h"
+#include <pcl/common/io.h>
 
 namespace lio_sam {
 
@@ -26,12 +27,16 @@ MapOptimization::MapOptimization(LioSamParams &params) : params_(params) {
 // Return the most recent features in the body pose
 pcl::PointCloud<PointType>::Ptr MapOptimization::getMostRecentFrame() {
   pcl::PointCloud<PointType>::Ptr cloudOut(new pcl::PointCloud<PointType>());
-  // PointTypePose thisPose6D = trans2PointTypePose(transformTobeMapped);
-  // *cloudOut += *transformPointCloud(laserCloudCornerLastDS, &thisPose6D);
-  // *cloudOut += *transformPointCloud(laserCloudSurfLastDS, &thisPose6D);
   *cloudOut += *laserCloudCornerLastDS;
   *cloudOut += *laserCloudSurfLastDS;
   return cloudOut;
+}
+
+void printTransform(float transformTobeMapped[6]) {
+  std::cout << transformTobeMapped[0] << " " << transformTobeMapped[1] << " "
+            << transformTobeMapped[2] << " " << transformTobeMapped[3] << " "
+            << transformTobeMapped[4] << " " << transformTobeMapped[5]
+            << std::endl;
 }
 
 void MapOptimization::allocateMemory() {
@@ -91,8 +96,8 @@ MapOptimization::laserCloudInfoHandler(const CloudInfo<PointType> &cloudInfo) {
   // extract info and feature cloud
   // TODO: Can probably remove these variables and pass them throughout
   // eventually
-  laserCloudCornerLast = cloudInfo.cloud_corner;
-  laserCloudSurfLast = cloudInfo.cloud_surface;
+  pcl::copyPointCloud(cloudInfo.cloud_corner, *laserCloudCornerLast);
+  pcl::copyPointCloud(cloudInfo.cloud_surface, *laserCloudSurfLast);
 
   std::lock_guard<std::mutex> lock(mtx);
 
@@ -103,6 +108,8 @@ MapOptimization::laserCloudInfoHandler(const CloudInfo<PointType> &cloudInfo) {
     extractSurroundingKeyFrames();
     downsampleCurrentScan();
     scan2MapOptimization(cloudInfo);
+    saveKeyFramesAndFactor();
+    // printTransform(transformTobeMapped);
     return trans2Odometry(timeLaserInfoCur, transformTobeMapped);
   }
 
@@ -903,6 +910,54 @@ void MapOptimization::addOdomFactor() {
         poseFrom.between(poseTo), odometryNoise));
     initialEstimate.insert(cloudKeyPoses3D->size(), poseTo);
   }
+}
+
+void MapOptimization::saveKeyFramesAndFactor() {
+  auto mostRecentPose = trans2gtsamPose(transformTobeMapped);
+
+  // save key poses
+  PointType thisPose3D;
+  PointTypePose thisPose6D;
+  Pose3 latestEstimate;
+
+  // Just use our LM result for most recent pose
+  latestEstimate = trans2gtsamPose(transformTobeMapped);
+
+  // cout << "****************************************************" << endl;
+  // isamCurrentEstimate.print("Current estimate: ");
+
+  thisPose3D.x = latestEstimate.translation().x();
+  thisPose3D.y = latestEstimate.translation().y();
+  thisPose3D.z = latestEstimate.translation().z();
+  thisPose3D.intensity = cloudKeyPoses3D->size(); // this can be used as index
+  cloudKeyPoses3D->push_back(thisPose3D);
+
+  thisPose6D.x = thisPose3D.x;
+  thisPose6D.y = thisPose3D.y;
+  thisPose6D.z = thisPose3D.z;
+  thisPose6D.intensity = thisPose3D.intensity; // this can be used as index
+  thisPose6D.roll = latestEstimate.rotation().roll();
+  thisPose6D.pitch = latestEstimate.rotation().pitch();
+  thisPose6D.yaw = latestEstimate.rotation().yaw();
+  thisPose6D.time = timeLaserInfoCur;
+  cloudKeyPoses6D->push_back(thisPose6D);
+
+  // cout << "****************************************************" << endl;
+  // cout << "Pose covariance:" << endl;
+  // cout << isam->marginalCovariance(isamCurrentEstimate.size()-1) << endl <<
+  // endl;
+
+  // save all the received edge and surf points
+  pcl::PointCloud<PointType>::Ptr thisCornerKeyFrame(
+      new pcl::PointCloud<PointType>());
+  pcl::PointCloud<PointType>::Ptr thisSurfKeyFrame(
+      new pcl::PointCloud<PointType>());
+  pcl::copyPointCloud(*laserCloudCornerLastDS, *thisCornerKeyFrame);
+  pcl::copyPointCloud(*laserCloudSurfLastDS, *thisSurfKeyFrame);
+
+  // save key frame cloud
+  cornerCloudKeyFrames.push_back(thisCornerKeyFrame);
+  surfCloudKeyFrames.push_back(thisSurfKeyFrame);
 }
 
 } // namespace lio_sam

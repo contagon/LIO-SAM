@@ -1,4 +1,5 @@
 #include "LIO-SAM/featureExtraction.h"
+#include <pcl/common/io.h>
 
 namespace lio_sam {
 
@@ -31,13 +32,13 @@ void FeatureExtraction::processCloud(CloudInfo<PointType> &cloudInfo) {
   cloudInfo.pointColInd.clear();
   cloudInfo.pointRange.clear();
   // Add in feature clouds
-  cloudInfo.cloud_corner = cornerCloud;
-  cloudInfo.cloud_surface = surfaceCloud;
+  pcl::copyPointCloud(*cornerCloud, cloudInfo.cloud_corner);
+  pcl::copyPointCloud(*surfaceCloud, cloudInfo.cloud_surface);
 }
 
 void FeatureExtraction::calculateSmoothness(
     const CloudInfo<PointType> &cloudInfo) {
-  int cloudSize = cloudInfo.cloud_deskewed->points.size();
+  int cloudSize = cloudInfo.cloud_deskewed.points.size();
   for (int i = 5; i < cloudSize - 5; i++) {
     float diffRange =
         cloudInfo.pointRange[i - 5] + cloudInfo.pointRange[i - 4] +
@@ -60,7 +61,7 @@ void FeatureExtraction::calculateSmoothness(
 
 void FeatureExtraction::markOccludedPoints(
     const CloudInfo<PointType> &cloudInfo) {
-  int cloudSize = cloudInfo.cloud_deskewed->points.size();
+  int cloudSize = cloudInfo.cloud_deskewed.points.size();
   // mark occluded points and parallel beam points
   for (int i = 5; i < cloudSize - 6; ++i) {
     // occluded points
@@ -135,7 +136,7 @@ void FeatureExtraction::extractFeatures(const CloudInfo<PointType> &cloudInfo) {
           largestPickedNum++;
           if (largestPickedNum <= 20) {
             cloudLabel[ind] = 1;
-            cornerCloud->push_back(cloudInfo.cloud_deskewed->points[ind]);
+            cornerCloud->push_back(cloudInfo.cloud_deskewed.points[ind]);
           } else {
             break;
           }
@@ -189,7 +190,7 @@ void FeatureExtraction::extractFeatures(const CloudInfo<PointType> &cloudInfo) {
 
       for (int k = sp; k <= ep; k++) {
         if (cloudLabel[k] <= 0) {
-          surfaceCloudScan->push_back(cloudInfo.cloud_deskewed->points[k]);
+          surfaceCloudScan->push_back(cloudInfo.cloud_deskewed.points[k]);
         }
       }
     }

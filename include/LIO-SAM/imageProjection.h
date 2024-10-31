@@ -71,7 +71,7 @@ public:
   ~ImageProjection() {}
 
   void imuHandler(const Imu &imuMsg);
-  // TODO: What does this do? It's published from the IMU node.
+
   void odometryHandler(const Odometry &odometryMsg);
   std::optional<CloudInfo<PointType>>
   cloudHandler(double stamp,

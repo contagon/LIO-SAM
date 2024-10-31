@@ -1,5 +1,6 @@
 #include "LIO-SAM/imageProjection.h"
 #include "LIO-SAM/utils.h"
+#include <pcl/common/io.h>
 
 namespace lio_sam {
 
@@ -57,7 +58,7 @@ std::optional<CloudInfo<PointType>> ImageProjection::cloudHandler(
 
   // Save our deskewed cloud!
   cloudInfo.stamp = stamp;
-  cloudInfo.cloud_deskewed = extractedCloud;
+  pcl::copyPointCloud(*extractedCloud, cloudInfo.cloud_deskewed);
 
   resetParameters();
 

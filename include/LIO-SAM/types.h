@@ -114,18 +114,9 @@ template <typename PointT> struct CloudInfo {
   float initialGuessYaw;
 
   // Point cloud messages
-  typename pcl::PointCloud<PointT>::Ptr
-      cloud_deskewed; // original cloud deskewed
-  typename pcl::PointCloud<PointT>::Ptr
-      cloud_corner; // extracted corner feature
-  typename pcl::PointCloud<PointT>::Ptr
-      cloud_surface; // extracted surface feature
-
-  // 3rd party messages
-  typename pcl::PointCloud<PointT>::Ptr key_frame_cloud;
-  typename pcl::PointCloud<PointT>::Ptr key_frame_color;
-  typename pcl::PointCloud<PointT>::Ptr key_frame_poses;
-  typename pcl::PointCloud<PointT>::Ptr key_frame_map;
+  typename pcl::PointCloud<PointT> cloud_deskewed; // original cloud deskewed
+  typename pcl::PointCloud<PointT> cloud_corner;   // extracted corner feature
+  typename pcl::PointCloud<PointT> cloud_surface;  // extracted surface feature
 };
 
 typedef pcl::PointXYZI PointType;

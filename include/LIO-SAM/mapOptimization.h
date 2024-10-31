@@ -115,6 +115,8 @@ private:
 
   void extractNearby();
 
+  void saveKeyFramesAndFactor();
+
   void extractCloud(pcl::PointCloud<PointType>::Ptr cloudToExtract);
 
   void extractSurroundingKeyFrames();
