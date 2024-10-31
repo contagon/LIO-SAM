@@ -1,13 +1,14 @@
 # LIO-SAM
-This is a fork of the original LIO-SAM to enable usage without ROS, specifically in an offline setting for evaluation purposes in [evalio](TODO). 
+This is a fork of the original LIO-SAM to enable usage without ROS, specifically in an offline setting for evaluation purposes in [evalio](https://github.com/contagon/evalio). 
 
 The following changes have been made,
 - Removal of ROS dependencies
 - Removal of loop closure and GPS code. The only bits remaining are the Lidar-Inertial Odometry code.
 - Removal of dependence on a 9-axis IMU. The vehicle is assumed to be at rest for the first tenth of a second to initialize bias and orientation using the accelerometer.
+- Removal of LIVOX sensor compatibility.
 - Clean up some of the cruft of the original LIO-SAM implementation, mostly related to dealing with ROS types.
 
-Everything appears to function appropriately. If you'd like to run this, I recommend you check out [evalio](TODO) for a simple python wrapper and connection to existing datasets.
+Everything appears to function appropriately. If you'd like to run this, I recommend you check out [evalio](https://github.com/contagon/evalio) for a simple python wrapper and connection to existing datasets.
 
 
 ## TODOs
