@@ -64,10 +64,10 @@ private:
 
   int key = 1;
 
-  // T_bl: tramsform points from lidar frame to imu frame
+  // T_bl: transform points from lidar frame to imu frame
   gtsam::Pose3 imu2Lidar;
 
-  // T_lb: tramsform points from imu frame to lidar frame
+  // T_lb: transform points from imu frame to lidar frame
   gtsam::Pose3 lidar2Imu;
 
   Odometry initializePose();

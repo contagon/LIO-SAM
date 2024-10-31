@@ -63,13 +63,13 @@ struct LioSamParams {
   int edgeFeatureMinValidNum = 10;
   int surfFeatureMinValidNum = 100;
 
-  // voxel filter paprams
+  // voxel filter params
   float odometrySurfLeafSize = 0.4;
   float mappingCornerLeafSize = 0.2;
   float mappingSurfLeafSize = 0.4;
 
-  float z_tollerance = 1000;
-  float rotation_tollerance = 1000;
+  float z_tolerance = 1000;
+  float rotation_tolerance = 1000;
 
   // CPU Params
   int numberOfCores = 4;

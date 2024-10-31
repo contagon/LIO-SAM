@@ -872,12 +872,12 @@ void MapOptimization::transformUpdate(const CloudInfo<PointType> &cloudInfo) {
   //   }
   // }
 
-  transformTobeMapped[0] = constraintTransformation(
-      transformTobeMapped[0], params_.rotation_tollerance);
-  transformTobeMapped[1] = constraintTransformation(
-      transformTobeMapped[1], params_.rotation_tollerance);
+  transformTobeMapped[0] = constraintTransformation(transformTobeMapped[0],
+                                                    params_.rotation_tolerance);
+  transformTobeMapped[1] = constraintTransformation(transformTobeMapped[1],
+                                                    params_.rotation_tolerance);
   transformTobeMapped[5] =
-      constraintTransformation(transformTobeMapped[5], params_.z_tollerance);
+      constraintTransformation(transformTobeMapped[5], params_.z_tolerance);
 }
 
 float MapOptimization::constraintTransformation(float value, float limit) {
