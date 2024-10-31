@@ -1,4 +1,3 @@
-// TODO: Eventually reintroduce ROS wrapper
 #include "featureExtraction.h"
 #include "imageProjection.h"
 #include "imuPreintegration.h"
