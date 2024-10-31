@@ -45,7 +45,7 @@ void ImageProjection::odometryHandler(const Odometry &odometryMsg) {
   odomQueue.push_back(odometryMsg);
 }
 
-std::optional<CloudInfo<PointType>> ImageProjection::cloudHandler(
+std::optional<CloudInfo> ImageProjection::cloudHandler(
     double stamp, const pcl::PointCloud<PointXYZIRT>::Ptr laserCloudMsg) {
   if (!cachePointCloud(stamp, laserCloudMsg))
     return {};
@@ -130,7 +130,7 @@ bool ImageProjection::deskewInfo() {
   // make sure IMU data available for the scan
   if (gyroQueue.empty() || gyroQueue.front().first > timeScanCur ||
       gyroQueue.back().first < timeScanEnd) {
-    std::cout << "Waiting for IMU data ..." << std::endl;
+    // std::cout << "Waiting for IMU data ..." << std::endl;
     return false;
   }
 
@@ -381,20 +381,14 @@ void ImageProjection::projectPointCloud() {
     if (rowIdn % params_.downsampleRate != 0)
       continue;
 
-    // TODO: Need to handle this myself somehow
+    // Find Column Number
     int columnIdn = -1;
-    if (params_.sensor == SensorType::VELODYNE ||
-        params_.sensor == SensorType::OUSTER) {
-      float horizonAngle = atan2(thisPoint.x, thisPoint.y) * 180 / M_PI;
-      static float ang_res_x = 360.0 / float(params_.Horizon_SCAN);
-      columnIdn = -round((horizonAngle - 90.0) / ang_res_x) +
-                  float(params_.Horizon_SCAN) / 2;
-      if (columnIdn >= params_.Horizon_SCAN)
-        columnIdn -= params_.Horizon_SCAN;
-    } else if (params_.sensor == SensorType::LIVOX) {
-      columnIdn = columnIdnCountVec[rowIdn];
-      columnIdnCountVec[rowIdn] += 1;
-    }
+    float horizonAngle = atan2(thisPoint.x, thisPoint.y) * 180 / M_PI;
+    static float ang_res_x = 360.0 / float(params_.Horizon_SCAN);
+    columnIdn = -round((horizonAngle - 90.0) / ang_res_x) +
+                float(params_.Horizon_SCAN) / 2;
+    if (columnIdn >= params_.Horizon_SCAN)
+      columnIdn -= params_.Horizon_SCAN;
 
     if (columnIdn < 0 || columnIdn >= params_.Horizon_SCAN)
       continue;

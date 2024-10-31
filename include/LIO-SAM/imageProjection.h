@@ -44,7 +44,7 @@ private:
   float odomIncreY;
   float odomIncreZ;
 
-  CloudInfo<PointType> cloudInfo;
+  CloudInfo cloudInfo;
   double timeScanCur;
   double timeScanEnd;
 
@@ -73,7 +73,7 @@ public:
   void imuHandler(const Imu &imuMsg);
 
   void odometryHandler(const Odometry &odometryMsg);
-  std::optional<CloudInfo<PointType>>
+  std::optional<CloudInfo>
   cloudHandler(double stamp,
                const pcl::PointCloud<PointXYZIRT>::Ptr laserCloudMsg);
 };

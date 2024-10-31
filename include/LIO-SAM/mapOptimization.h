@@ -111,7 +111,7 @@ private:
   transformPointCloud(pcl::PointCloud<PointType>::Ptr cloudIn,
                       PointTypePose *transformIn);
 
-  void updateInitialGuess(const CloudInfo<PointType> &cloudInfo);
+  void updateInitialGuess(const CloudInfo &cloudInfo);
 
   void extractNearby();
 
@@ -133,9 +133,9 @@ private:
 
   bool LMOptimization(int iterCount);
 
-  void scan2MapOptimization(const CloudInfo<PointType> &cloudInfo);
+  void scan2MapOptimization(const CloudInfo &cloudInfo);
 
-  void transformUpdate(const CloudInfo<PointType> &cloudInfo);
+  void transformUpdate(const CloudInfo &cloudInfo);
 
   float constraintTransformation(float value, float limit);
 
@@ -144,8 +144,7 @@ private:
 public:
   MapOptimization(LioSamParams &params);
 
-  std::optional<Odometry>
-  laserCloudInfoHandler(const CloudInfo<PointType> &cloudInfo);
+  std::optional<Odometry> laserCloudInfoHandler(const CloudInfo &cloudInfo);
 
   // Getters
   // Return the most recent features in the body pose

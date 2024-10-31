@@ -34,12 +34,9 @@ struct Odometry {
   Eigen::Vector3d position;
 };
 
-enum class SensorType { VELODYNE, OUSTER, LIVOX };
-
 struct LioSamParams {
   // REQUIRED PARAMS
   // Lidar
-  SensorType sensor;
   int N_SCAN;
   int Horizon_SCAN;
   int downsampleRate;
@@ -92,8 +89,9 @@ struct LioSamParams {
   float resolution = 0.2;
 };
 
-// TODO: Should all the pointclouds here have the same type?
-template <typename PointT> struct CloudInfo {
+typedef pcl::PointXYZI PointType;
+
+struct CloudInfo {
   double stamp;
 
   std::vector<std::int32_t> startRingIndex;
@@ -114,12 +112,11 @@ template <typename PointT> struct CloudInfo {
   float initialGuessYaw;
 
   // Point cloud messages
-  typename pcl::PointCloud<PointT> cloud_deskewed; // original cloud deskewed
-  typename pcl::PointCloud<PointT> cloud_corner;   // extracted corner feature
-  typename pcl::PointCloud<PointT> cloud_surface;  // extracted surface feature
+  typename pcl::PointCloud<PointType> cloud_deskewed; // original cloud deskewed
+  typename pcl::PointCloud<PointType> cloud_corner; // extracted corner feature
+  typename pcl::PointCloud<PointType>
+      cloud_surface; // extracted surface feature
 };
-
-typedef pcl::PointXYZI PointType;
 
 struct PointXYZIRT {
   PCL_ADD_POINT4D

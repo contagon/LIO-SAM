@@ -26,13 +26,13 @@ private:
   int *cloudNeighborPicked;
   int *cloudLabel;
 
-  void calculateSmoothness(const CloudInfo<PointType> &cloudInfo);
-  void markOccludedPoints(const CloudInfo<PointType> &cloudInfo);
-  void extractFeatures(const CloudInfo<PointType> &cloudInfo);
+  void calculateSmoothness(const CloudInfo &cloudInfo);
+  void markOccludedPoints(const CloudInfo &cloudInfo);
+  void extractFeatures(const CloudInfo &cloudInfo);
 
 public:
   FeatureExtraction(const LioSamParams &params);
-  void processCloud(CloudInfo<PointType> &cloudInfo);
+  void processCloud(CloudInfo &cloudInfo);
 };
 
 } // namespace lio_sam

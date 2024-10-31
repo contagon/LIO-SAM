@@ -89,7 +89,7 @@ void MapOptimization::allocateMemory() {
 }
 
 std::optional<Odometry>
-MapOptimization::laserCloudInfoHandler(const CloudInfo<PointType> &cloudInfo) {
+MapOptimization::laserCloudInfoHandler(const CloudInfo &cloudInfo) {
   // extract time stamp
   timeLaserInfoCur = cloudInfo.stamp;
 
@@ -318,8 +318,7 @@ pcl::PointCloud<PointType>::Ptr MapOptimization::getGlobalMap() {
   return globalMapKeyPosesDS;
 }
 
-void MapOptimization::updateInitialGuess(
-    const CloudInfo<PointType> &cloudInfo) {
+void MapOptimization::updateInitialGuess(const CloudInfo &cloudInfo) {
   static Eigen::Affine3f lastImuTransformation;
   // initialization
   if (cloudKeyPoses3D->points.empty()) {
@@ -814,8 +813,7 @@ bool MapOptimization::LMOptimization(int iterCount) {
   return false; // keep optimizing
 }
 
-void MapOptimization::scan2MapOptimization(
-    const CloudInfo<PointType> &cloudInfo) {
+void MapOptimization::scan2MapOptimization(const CloudInfo &cloudInfo) {
   if (cloudKeyPoses3D->points.empty())
     return;
 
@@ -845,7 +843,7 @@ void MapOptimization::scan2MapOptimization(
   }
 }
 
-void MapOptimization::transformUpdate(const CloudInfo<PointType> &cloudInfo) {
+void MapOptimization::transformUpdate(const CloudInfo &cloudInfo) {
   // Weight actual transform with result from IMU orientation - disable
   // if (cloudInfo.imuAvailable == true) {
   //   if (std::abs(cloudInfo.imuPitchInit) < 1.4) {

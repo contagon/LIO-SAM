@@ -19,7 +19,7 @@ FeatureExtraction::FeatureExtraction(const LioSamParams &params)
   cloudLabel = new int[params_.N_SCAN * params_.Horizon_SCAN];
 }
 
-void FeatureExtraction::processCloud(CloudInfo<PointType> &cloudInfo) {
+void FeatureExtraction::processCloud(CloudInfo &cloudInfo) {
   // Compute features
   calculateSmoothness(cloudInfo);
   markOccludedPoints(cloudInfo);
@@ -36,8 +36,7 @@ void FeatureExtraction::processCloud(CloudInfo<PointType> &cloudInfo) {
   pcl::copyPointCloud(*surfaceCloud, cloudInfo.cloud_surface);
 }
 
-void FeatureExtraction::calculateSmoothness(
-    const CloudInfo<PointType> &cloudInfo) {
+void FeatureExtraction::calculateSmoothness(const CloudInfo &cloudInfo) {
   int cloudSize = cloudInfo.cloud_deskewed.points.size();
   for (int i = 5; i < cloudSize - 5; i++) {
     float diffRange =
@@ -59,8 +58,7 @@ void FeatureExtraction::calculateSmoothness(
   }
 }
 
-void FeatureExtraction::markOccludedPoints(
-    const CloudInfo<PointType> &cloudInfo) {
+void FeatureExtraction::markOccludedPoints(const CloudInfo &cloudInfo) {
   int cloudSize = cloudInfo.cloud_deskewed.points.size();
   // mark occluded points and parallel beam points
   for (int i = 5; i < cloudSize - 6; ++i) {
@@ -100,7 +98,7 @@ void FeatureExtraction::markOccludedPoints(
   }
 }
 
-void FeatureExtraction::extractFeatures(const CloudInfo<PointType> &cloudInfo) {
+void FeatureExtraction::extractFeatures(const CloudInfo &cloudInfo) {
   cornerCloud->clear();
   surfaceCloud->clear();
 
