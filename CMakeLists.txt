@@ -6,16 +6,21 @@ find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
 find_package(OpenMP REQUIRED)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ###########
 ## Build ##
 ###########
 add_library(
     ${PROJECT_NAME} 
-    src/imuPreintegration.cpp
-    src/imageProjection.cpp 
-    src/featureExtraction.cpp 
-    src/mapOptimization.cpp
+)
+target_sources(
+    ${PROJECT_NAME} 
+    PUBLIC
+        src/imuPreintegration.cpp
+        src/imageProjection.cpp 
+        src/featureExtraction.cpp 
+        src/mapOptimization.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME} PUBLIC
