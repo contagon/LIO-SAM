@@ -84,6 +84,10 @@ struct LioSamParams {
   float globalMapVisualizationPoseDensity = 10.0;
   float globalMapVisualizationLeafSize = 1.0;
 
+  // Intensity params
+  std::function<double(double, double)> intensity_metric = 0;
+  std::function<double(double, double)> intensity_residual = 0;
+
   // Save pcd
   bool savePCD = false;
   std::string savePCDDirectory = "/tmp";
@@ -135,6 +139,7 @@ struct PointTypeIndexed {
 
 struct PointTypeResidual {
   PCL_ADD_POINT4D
+  float intensity_diff;
   float residual;
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
@@ -163,9 +168,8 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(lio_sam::PointTypeIndexed,
                                                                 index))
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(lio_sam::PointTypeResidual,
-                                  (float, x, x)(float, y, y)(float, z,
-                                                             z)(float, residual,
-                                                                residual))
+                                  (float, x, x)(float, y, y)(float, z, z)
+                                  (float, intensity_diff, intensity_diff)(float, residual,residual))
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(
     lio_sam::PointTypePose,

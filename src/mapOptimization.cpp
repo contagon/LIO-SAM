@@ -574,6 +574,7 @@ void MapOptimization::cornerOptimization() {
         coeff.y = s * lb;
         coeff.z = s * lc;
         coeff.residual = s * ld2;
+        coeff.intensity_diff = abs(pointSel.intensity - laserCloudSurfFromMapDS->points[pointSearchInd[0]].intensity);
 
         if (s > 0.1) {
           laserCloudOriCornerVec[i] = pointOri;
@@ -651,6 +652,7 @@ void MapOptimization::surfOptimization() {
         coeff.y = s * pb;
         coeff.z = s * pc;
         coeff.residual = s * pd2;
+        coeff.intensity_diff = abs(pointSel.intensity - laserCloudSurfFromMapDS->points[pointSearchInd[0]].intensity);
 
         if (s > 0.1) {
           laserCloudOriSurfVec[i] = pointOri;
@@ -753,17 +755,17 @@ bool MapOptimization::LMOptimization(int iterCount) {
                  (crz * sry - cry * srx * srz) * pointOri.y) *
                     coeff.z;
     // camera -> lidar
-    matA.at<float>(i, 0) = arz;
-    matA.at<float>(i, 1) = arx;
-    matA.at<float>(i, 2) = ary;
-    matA.at<float>(i, 3) = coeff.z;
-    matA.at<float>(i, 4) = coeff.x;
-    matA.at<float>(i, 5) = coeff.y;
-    matB.at<float>(i, 0) = -coeff.residual;
+    // Influence with our intensity residual function
+    double scale = params_.intensity_residual(coeff.residual, coeff.intensity_diff);
+    matA.at<float>(i, 0) = scale * arz;
+    matA.at<float>(i, 1) = scale * arx;
+    matA.at<float>(i, 2) = scale * ary;
+    matA.at<float>(i, 3) = scale * coeff.z;
+    matA.at<float>(i, 4) = scale * coeff.x;
+    matA.at<float>(i, 5) = scale * coeff.y;
+    matB.at<float>(i, 0) = scale * -coeff.residual;
   }
 
-  // TODO: Influence with our residual function
-  // TODO: Ensure intensity is actually intensity? I'm pretty skeptical tbh
 
   cv::transpose(matA, matAt);
   matAtA = matAt * matA;
