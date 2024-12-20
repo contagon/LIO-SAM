@@ -1,4 +1,5 @@
 #include "LIO-SAM/mapOptimization.h"
+#include "LIO-SAM/types.h"
 #include "LIO-SAM/utils.h"
 #include <pcl/common/io.h>
 
@@ -40,11 +41,10 @@ void printTransform(float transformTobeMapped[6]) {
 }
 
 void MapOptimization::allocateMemory() {
-  cloudKeyPoses3D.reset(new pcl::PointCloud<PointType>());
+  cloudKeyPoses3D.reset(new pcl::PointCloud<PointTypeIndexed>());
   cloudKeyPoses6D.reset(new pcl::PointCloud<PointTypePose>());
 
-  kdtreeSurroundingKeyPoses.reset(new pcl::KdTreeFLANN<PointType>());
-  kdtreeHistoryKeyPoses.reset(new pcl::KdTreeFLANN<PointType>());
+  kdtreeSurroundingKeyPoses.reset(new pcl::KdTreeFLANN<PointTypeIndexed>());
 
   laserCloudCornerLast.reset(
       new pcl::PointCloud<PointType>()); // corner feature set from
@@ -60,7 +60,7 @@ void MapOptimization::allocateMemory() {
                                          // odoOptimization
 
   laserCloudOri.reset(new pcl::PointCloud<PointType>());
-  coeffSel.reset(new pcl::PointCloud<PointType>());
+  coeffSel.reset(new pcl::PointCloud<PointTypeResidual>());
 
   laserCloudOriCornerVec.resize(params_.N_SCAN * params_.Horizon_SCAN);
   coeffSelCornerVec.resize(params_.N_SCAN * params_.Horizon_SCAN);
@@ -248,20 +248,20 @@ bool MapOptimization::saveMap() {
 
 pcl::PointCloud<PointType>::Ptr MapOptimization::getGlobalMap() {
 
-  pcl::KdTreeFLANN<PointType>::Ptr kdtreeGlobalMap(
-      new pcl::KdTreeFLANN<PointType>());
+  pcl::KdTreeFLANN<PointTypeIndexed>::Ptr kdtreeGlobalMap(
+      new pcl::KdTreeFLANN<PointTypeIndexed>());
   ;
-  pcl::PointCloud<PointType>::Ptr globalMapKeyPoses(
-      new pcl::PointCloud<PointType>());
-  pcl::PointCloud<PointType>::Ptr globalMapKeyPosesDS(
-      new pcl::PointCloud<PointType>());
+  pcl::PointCloud<PointTypeIndexed>::Ptr globalMapKeyPoses(
+      new pcl::PointCloud<PointTypeIndexed>());
+  pcl::PointCloud<PointTypeIndexed>::Ptr globalMapKeyPosesDS(
+      new pcl::PointCloud<PointTypeIndexed>());
   pcl::PointCloud<PointType>::Ptr globalMapKeyFrames(
       new pcl::PointCloud<PointType>());
   pcl::PointCloud<PointType>::Ptr globalMapKeyFramesDS(
       new pcl::PointCloud<PointType>());
 
   if (cloudKeyPoses3D->points.empty() == true)
-    return globalMapKeyPosesDS;
+    return globalMapKeyFramesDS;
 
   // kd-tree to find near key frames to visualize
   std::vector<int> pointSearchIndGlobalMap;
@@ -278,7 +278,7 @@ pcl::PointCloud<PointType>::Ptr MapOptimization::getGlobalMap() {
     globalMapKeyPoses->push_back(
         cloudKeyPoses3D->points[pointSearchIndGlobalMap[i]]);
   // downsample near selected key frames
-  pcl::VoxelGrid<PointType>
+  pcl::VoxelGrid<PointTypeIndexed>
       downSizeFilterGlobalMapKeyPoses; // for global map visualization
   downSizeFilterGlobalMapKeyPoses.setLeafSize(
       params_.globalMapVisualizationPoseDensity,
@@ -290,8 +290,7 @@ pcl::PointCloud<PointType>::Ptr MapOptimization::getGlobalMap() {
   for (auto &pt : globalMapKeyPosesDS->points) {
     kdtreeGlobalMap->nearestKSearch(pt, 1, pointSearchIndGlobalMap,
                                     pointSearchSqDisGlobalMap);
-    pt.intensity =
-        cloudKeyPoses3D->points[pointSearchIndGlobalMap[0]].intensity;
+    pt.index = cloudKeyPoses3D->points[pointSearchIndGlobalMap[0]].index;
   }
 
   // extract visualized and downsampled key frames
@@ -299,7 +298,7 @@ pcl::PointCloud<PointType>::Ptr MapOptimization::getGlobalMap() {
     if (pointDistance(globalMapKeyPosesDS->points[i], cloudKeyPoses3D->back()) >
         params_.globalMapVisualizationSearchRadius)
       continue;
-    int thisKeyInd = (int)globalMapKeyPosesDS->points[i].intensity;
+    int thisKeyInd = (int)globalMapKeyPosesDS->points[i].index;
     *globalMapKeyFrames += *transformPointCloud(
         cornerCloudKeyFrames[thisKeyInd], &cloudKeyPoses6D->points[thisKeyInd]);
     *globalMapKeyFrames += *transformPointCloud(
@@ -315,7 +314,7 @@ pcl::PointCloud<PointType>::Ptr MapOptimization::getGlobalMap() {
   downSizeFilterGlobalMapKeyFrames.setInputCloud(globalMapKeyFrames);
   downSizeFilterGlobalMapKeyFrames.filter(*globalMapKeyFramesDS);
 
-  return globalMapKeyPosesDS;
+  return globalMapKeyFramesDS;
 }
 
 void MapOptimization::updateInitialGuess(const CloudInfo &cloudInfo) {
@@ -364,10 +363,10 @@ void MapOptimization::updateInitialGuess(const CloudInfo &cloudInfo) {
 }
 
 void MapOptimization::extractNearby() {
-  pcl::PointCloud<PointType>::Ptr surroundingKeyPoses(
-      new pcl::PointCloud<PointType>());
-  pcl::PointCloud<PointType>::Ptr surroundingKeyPosesDS(
-      new pcl::PointCloud<PointType>());
+  pcl::PointCloud<PointTypeIndexed>::Ptr surroundingKeyPoses(
+      new pcl::PointCloud<PointTypeIndexed>());
+  pcl::PointCloud<PointTypeIndexed>::Ptr surroundingKeyPosesDS(
+      new pcl::PointCloud<PointTypeIndexed>());
   std::vector<int> pointSearchInd;
   std::vector<float> pointSearchSqDis;
 
@@ -386,7 +385,7 @@ void MapOptimization::extractNearby() {
   for (auto &pt : surroundingKeyPosesDS->points) {
     kdtreeSurroundingKeyPoses->nearestKSearch(pt, 1, pointSearchInd,
                                               pointSearchSqDis);
-    pt.intensity = cloudKeyPoses3D->points[pointSearchInd[0]].intensity;
+    pt.index = cloudKeyPoses3D->points[pointSearchInd[0]].index;
   }
 
   // also extract some latest key frames in case the robot rotates in one
@@ -403,7 +402,7 @@ void MapOptimization::extractNearby() {
 }
 
 void MapOptimization::extractCloud(
-    pcl::PointCloud<PointType>::Ptr cloudToExtract) {
+    pcl::PointCloud<PointTypeIndexed>::Ptr cloudToExtract) {
   // fuse the map
   laserCloudCornerFromMap->clear();
   laserCloudSurfFromMap->clear();
@@ -412,7 +411,7 @@ void MapOptimization::extractCloud(
         params_.surroundingKeyframeSearchRadius)
       continue;
 
-    int thisKeyInd = (int)cloudToExtract->points[i].intensity;
+    int thisKeyInd = (int)cloudToExtract->points[i].index;
     if (laserCloudMapContainer.find(thisKeyInd) !=
         laserCloudMapContainer.end()) {
       // transformed cloud available
@@ -473,7 +472,8 @@ void MapOptimization::cornerOptimization() {
 
 #pragma omp parallel for num_threads(params_.numberOfCores)
   for (int i = 0; i < laserCloudCornerLastDSNum; i++) {
-    PointType pointOri, pointSel, coeff;
+    PointType pointOri, pointSel;
+    PointTypeResidual coeff;
     std::vector<int> pointSearchInd;
     std::vector<float> pointSearchSqDis;
 
@@ -573,7 +573,7 @@ void MapOptimization::cornerOptimization() {
         coeff.x = s * la;
         coeff.y = s * lb;
         coeff.z = s * lc;
-        coeff.intensity = s * ld2;
+        coeff.residual = s * ld2;
 
         if (s > 0.1) {
           laserCloudOriCornerVec[i] = pointOri;
@@ -590,7 +590,8 @@ void MapOptimization::surfOptimization() {
 
 #pragma omp parallel for num_threads(params_.numberOfCores)
   for (int i = 0; i < laserCloudSurfLastDSNum; i++) {
-    PointType pointOri, pointSel, coeff;
+    PointType pointOri, pointSel;
+    PointTypeResidual coeff;
     std::vector<int> pointSearchInd;
     std::vector<float> pointSearchSqDis;
 
@@ -649,7 +650,7 @@ void MapOptimization::surfOptimization() {
         coeff.x = s * pa;
         coeff.y = s * pb;
         coeff.z = s * pc;
-        coeff.intensity = s * pd2;
+        coeff.residual = s * pd2;
 
         if (s > 0.1) {
           laserCloudOriSurfVec[i] = pointOri;
@@ -703,14 +704,17 @@ bool MapOptimization::LMOptimization(int iterCount) {
     return false;
   }
 
+  // A = jacobians
   cv::Mat matA(laserCloudSelNum, 6, CV_32F, cv::Scalar::all(0));
   cv::Mat matAt(6, laserCloudSelNum, CV_32F, cv::Scalar::all(0));
   cv::Mat matAtA(6, 6, CV_32F, cv::Scalar::all(0));
+  // B = residuals
   cv::Mat matB(laserCloudSelNum, 1, CV_32F, cv::Scalar::all(0));
   cv::Mat matAtB(6, 1, CV_32F, cv::Scalar::all(0));
   cv::Mat matX(6, 1, CV_32F, cv::Scalar::all(0));
 
-  PointType pointOri, coeff;
+  PointType pointOri;
+  PointTypeResidual coeff;
 
   for (int i = 0; i < laserCloudSelNum; i++) {
     // lidar -> camera
@@ -721,7 +725,7 @@ bool MapOptimization::LMOptimization(int iterCount) {
     coeff.x = coeffSel->points[i].y;
     coeff.y = coeffSel->points[i].z;
     coeff.z = coeffSel->points[i].x;
-    coeff.intensity = coeffSel->points[i].intensity;
+    coeff.residual = coeffSel->points[i].residual;
     // in camera
     float arx =
         (crx * sry * srz * pointOri.x + crx * crz * sry * pointOri.y -
@@ -755,8 +759,11 @@ bool MapOptimization::LMOptimization(int iterCount) {
     matA.at<float>(i, 3) = coeff.z;
     matA.at<float>(i, 4) = coeff.x;
     matA.at<float>(i, 5) = coeff.y;
-    matB.at<float>(i, 0) = -coeff.intensity;
+    matB.at<float>(i, 0) = -coeff.residual;
   }
+
+  // TODO: Influence with our residual function
+  // TODO: Ensure intensity is actually intensity? I'm pretty skeptical tbh
 
   cv::transpose(matA, matAt);
   matAtA = matAt * matA;
@@ -914,7 +921,7 @@ void MapOptimization::saveKeyFramesAndFactor() {
   auto mostRecentPose = trans2gtsamPose(transformTobeMapped);
 
   // save key poses
-  PointType thisPose3D;
+  PointTypeIndexed thisPose3D;
   PointTypePose thisPose6D;
   Pose3 latestEstimate;
 
@@ -927,13 +934,13 @@ void MapOptimization::saveKeyFramesAndFactor() {
   thisPose3D.x = latestEstimate.translation().x();
   thisPose3D.y = latestEstimate.translation().y();
   thisPose3D.z = latestEstimate.translation().z();
-  thisPose3D.intensity = cloudKeyPoses3D->size(); // this can be used as index
+  thisPose3D.index = cloudKeyPoses3D->size(); // this can be used as index
   cloudKeyPoses3D->push_back(thisPose3D);
 
   thisPose6D.x = thisPose3D.x;
   thisPose6D.y = thisPose3D.y;
   thisPose6D.z = thisPose3D.z;
-  thisPose6D.intensity = thisPose3D.intensity; // this can be used as index
+  thisPose6D.index = thisPose3D.index; // this can be used as index
   thisPose6D.roll = latestEstimate.rotation().roll();
   thisPose6D.pitch = latestEstimate.rotation().pitch();
   thisPose6D.yaw = latestEstimate.rotation().yaw();

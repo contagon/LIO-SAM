@@ -43,10 +43,11 @@ private:
   ISAM2 *isam;
   Values isamCurrentEstimate;
 
+  // TODO: What point types should these be?
   std::vector<pcl::PointCloud<PointType>::Ptr> cornerCloudKeyFrames;
   std::vector<pcl::PointCloud<PointType>::Ptr> surfCloudKeyFrames;
 
-  pcl::PointCloud<PointType>::Ptr cloudKeyPoses3D;
+  pcl::PointCloud<PointTypeIndexed>::Ptr cloudKeyPoses3D;
   pcl::PointCloud<PointTypePose>::Ptr cloudKeyPoses6D;
 
   // corner feature set from odoOptimization
@@ -59,15 +60,15 @@ private:
   pcl::PointCloud<PointType>::Ptr laserCloudSurfLastDS;
 
   pcl::PointCloud<PointType>::Ptr laserCloudOri;
-  pcl::PointCloud<PointType>::Ptr coeffSel;
+  pcl::PointCloud<PointTypeResidual>::Ptr coeffSel;
 
   // corner point holder for parallel computation
   std::vector<PointType> laserCloudOriCornerVec;
-  std::vector<PointType> coeffSelCornerVec;
+  std::vector<PointTypeResidual> coeffSelCornerVec;
   std::vector<bool> laserCloudOriCornerFlag;
   // surf point holder for parallel computation
   std::vector<PointType> laserCloudOriSurfVec;
-  std::vector<PointType> coeffSelSurfVec;
+  std::vector<PointTypeResidual> coeffSelSurfVec;
   std::vector<bool> laserCloudOriSurfFlag;
 
   std::map<int,
@@ -81,13 +82,12 @@ private:
   pcl::KdTreeFLANN<PointType>::Ptr kdtreeCornerFromMap;
   pcl::KdTreeFLANN<PointType>::Ptr kdtreeSurfFromMap;
 
-  pcl::KdTreeFLANN<PointType>::Ptr kdtreeSurroundingKeyPoses;
-  pcl::KdTreeFLANN<PointType>::Ptr kdtreeHistoryKeyPoses;
+  pcl::KdTreeFLANN<PointTypeIndexed>::Ptr kdtreeSurroundingKeyPoses;
 
   pcl::VoxelGrid<PointType> downSizeFilterCorner;
   pcl::VoxelGrid<PointType> downSizeFilterSurf;
   // for surrounding key poses of scan-to-map optimization
-  pcl::VoxelGrid<PointType> downSizeFilterSurroundingKeyPoses;
+  pcl::VoxelGrid<PointTypeIndexed> downSizeFilterSurroundingKeyPoses;
 
   double timeLaserInfoCur;
 
@@ -105,7 +105,8 @@ private:
 
   void allocateMemory();
 
-  void pointAssociateToMap(PointType const *const pi, PointType *const po);
+  void pointAssociateToMap(PointType const *const pi,
+                           PointType *const po);
 
   pcl::PointCloud<PointType>::Ptr
   transformPointCloud(pcl::PointCloud<PointType>::Ptr cloudIn,
@@ -117,7 +118,7 @@ private:
 
   void saveKeyFramesAndFactor();
 
-  void extractCloud(pcl::PointCloud<PointType>::Ptr cloudToExtract);
+  void extractCloud(pcl::PointCloud<PointTypeIndexed>::Ptr cloudToExtract);
 
   void extractSurroundingKeyFrames();
 

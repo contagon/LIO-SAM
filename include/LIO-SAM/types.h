@@ -1,4 +1,5 @@
 #pragma once
+#define PCL_NO_PRECOMPILE
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/src/Geometry/Quaternion.h>
@@ -126,15 +127,27 @@ struct PointXYZIRT {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
+struct PointTypeIndexed {
+  PCL_ADD_POINT4D
+  float index;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
+struct PointTypeResidual {
+  PCL_ADD_POINT4D
+  float residual;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
 struct PointTypePose {
   PCL_ADD_POINT4D
-  PCL_ADD_INTENSITY; // preferred way of adding a XYZ+padding
+  float index;
   float roll;
   float pitch;
   float yaw;
   double time;
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW // make sure our new allocators are aligned
-}; // enforce SSE padding for correct memory alignment
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
 
 } // namespace lio_sam
 
@@ -144,8 +157,18 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(
                                             intensity)(std::uint16_t, ring,
                                                        ring)(float, time, time))
 
+POINT_CLOUD_REGISTER_POINT_STRUCT(lio_sam::PointTypeIndexed,
+                                  (float, x, x)(float, y, y)(float, z,
+                                                             z)(float, index,
+                                                                index))
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(lio_sam::PointTypeResidual,
+                                  (float, x, x)(float, y, y)(float, z,
+                                                             z)(float, residual,
+                                                                residual))
+
 POINT_CLOUD_REGISTER_POINT_STRUCT(
     lio_sam::PointTypePose,
-    (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(
+    (float, x, x)(float, y, y)(float, z, z)(float, index, index)(
         float, roll, roll)(float, pitch, pitch)(float, yaw, yaw)(double, time,
                                                                  time))
