@@ -101,7 +101,6 @@ MapOptimization::laserCloudInfoHandler(const CloudInfo &cloudInfo) {
 
   std::lock_guard<std::mutex> lock(mtx);
 
-  static double timeLastProcessing = -1;
   if (timeLaserInfoCur - timeLastProcessing >= params_.mappingProcessInterval) {
     timeLastProcessing = timeLaserInfoCur;
     updateInitialGuess(cloudInfo);
@@ -318,7 +317,6 @@ pcl::PointCloud<PointType>::Ptr MapOptimization::getGlobalMap() {
 }
 
 void MapOptimization::updateInitialGuess(const CloudInfo &cloudInfo) {
-  static Eigen::Affine3f lastImuTransformation;
   // initialization
   if (cloudKeyPoses3D->points.empty()) {
     transformTobeMapped[0] = cloudInfo.initialGuessRoll;
@@ -332,8 +330,6 @@ void MapOptimization::updateInitialGuess(const CloudInfo &cloudInfo) {
   }
 
   // use imu pre-integration estimation for pose guess
-  static bool lastImuPreTransAvailable = false;
-  static Eigen::Affine3f lastImuPreTransformation;
   if (cloudInfo.odomAvailable == true) {
     Eigen::Affine3f transBack = pcl::getTransformation(
         cloudInfo.initialGuessX, cloudInfo.initialGuessY,
@@ -574,7 +570,9 @@ void MapOptimization::cornerOptimization() {
         coeff.y = s * lb;
         coeff.z = s * lc;
         coeff.residual = s * ld2;
-        coeff.intensity_diff = abs(pointSel.intensity - laserCloudSurfFromMapDS->points[pointSearchInd[0]].intensity);
+        coeff.intensity_diff =
+            abs(pointSel.intensity -
+                laserCloudSurfFromMapDS->points[pointSearchInd[0]].intensity);
 
         if (s > 0.1) {
           laserCloudOriCornerVec[i] = pointOri;
@@ -652,7 +650,9 @@ void MapOptimization::surfOptimization() {
         coeff.y = s * pb;
         coeff.z = s * pc;
         coeff.residual = s * pd2;
-        coeff.intensity_diff = abs(pointSel.intensity - laserCloudSurfFromMapDS->points[pointSearchInd[0]].intensity);
+        coeff.intensity_diff =
+            abs(pointSel.intensity -
+                laserCloudSurfFromMapDS->points[pointSearchInd[0]].intensity);
 
         if (s > 0.1) {
           laserCloudOriSurfVec[i] = pointOri;
@@ -756,7 +756,8 @@ bool MapOptimization::LMOptimization(int iterCount) {
                     coeff.z;
     // camera -> lidar
     // Influence with our intensity residual function
-    double scale = params_.intensity_residual(coeff.residual, coeff.intensity_diff);
+    double scale =
+        params_.intensity_residual(coeff.residual, coeff.intensity_diff);
     matA.at<float>(i, 0) = scale * arz;
     matA.at<float>(i, 1) = scale * arx;
     matA.at<float>(i, 2) = scale * ary;
@@ -765,7 +766,6 @@ bool MapOptimization::LMOptimization(int iterCount) {
     matA.at<float>(i, 5) = scale * coeff.y;
     matB.at<float>(i, 0) = scale * -coeff.residual;
   }
-
 
   cv::transpose(matA, matAt);
   matAtA = matAt * matA;

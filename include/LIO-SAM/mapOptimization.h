@@ -43,7 +43,12 @@ private:
   ISAM2 *isam;
   Values isamCurrentEstimate;
 
-  // TODO: What point types should these be?
+  // Intermediate computations that need to be cached
+  double timeLastProcessing = -1;
+  bool lastImuPreTransAvailable = false;
+  Eigen::Affine3f lastImuTransformation = Eigen::Affine3f();
+  Eigen::Affine3f lastImuPreTransformation = Eigen::Affine3f();
+
   std::vector<pcl::PointCloud<PointType>::Ptr> cornerCloudKeyFrames;
   std::vector<pcl::PointCloud<PointType>::Ptr> surfCloudKeyFrames;
 
@@ -105,8 +110,7 @@ private:
 
   void allocateMemory();
 
-  void pointAssociateToMap(PointType const *const pi,
-                           PointType *const po);
+  void pointAssociateToMap(PointType const *const pi, PointType *const po);
 
   pcl::PointCloud<PointType>::Ptr
   transformPointCloud(pcl::PointCloud<PointType>::Ptr cloudIn,

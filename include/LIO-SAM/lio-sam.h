@@ -25,7 +25,6 @@ public:
   LIOSAM(LioSamParams params)
       : params_(params), imuPreintegrator(params), featureExtractor(params),
         imageProjector(params), mapOptimizer(params) {}
-  ~LIOSAM(){};
 
   Odometry getPose() { return pose; }
 
