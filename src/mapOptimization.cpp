@@ -1,7 +1,9 @@
 #include "LIO-SAM/mapOptimization.h"
 #include "LIO-SAM/types.h"
 #include "LIO-SAM/utils.h"
+#include <boost/smart_ptr/shared_ptr.hpp>
 #include <pcl/common/io.h>
+#include <pcl/point_representation.h>
 
 namespace lio_sam {
 
@@ -78,8 +80,12 @@ void MapOptimization::allocateMemory() {
   laserCloudCornerFromMapDS.reset(new pcl::PointCloud<PointType>());
   laserCloudSurfFromMapDS.reset(new pcl::PointCloud<PointType>());
 
-  kdtreeCornerFromMap.reset(new pcl::KdTreeFLANN<PointType>());
-  kdtreeSurfFromMap.reset(new pcl::KdTreeFLANN<PointType>());
+  kdtreeCornerFromMap.reset(new pcl::KdTreeFLANN<PointType, MyL2>());
+  kdtreeSurfFromMap.reset(new pcl::KdTreeFLANN<PointType, MyL2>());
+  pcl::PointRepresentation<pcl::PointXYZI>::ConstPtr representation(
+      new IntensityRepresentation);
+  kdtreeCornerFromMap->setPointRepresentation(representation);
+  kdtreeSurfFromMap->setPointRepresentation(representation);
 
   for (int i = 0; i < 6; ++i) {
     transformTobeMapped[i] = 0;
