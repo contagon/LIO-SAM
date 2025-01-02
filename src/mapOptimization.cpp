@@ -1,4 +1,5 @@
 #include "LIO-SAM/mapOptimization.h"
+#include "LIO-SAM/metrics.h"
 #include "LIO-SAM/types.h"
 #include "LIO-SAM/utils.h"
 #include <boost/smart_ptr/shared_ptr.hpp>
@@ -80,8 +81,9 @@ void MapOptimization::allocateMemory() {
   laserCloudCornerFromMapDS.reset(new pcl::PointCloud<PointType>());
   laserCloudSurfFromMapDS.reset(new pcl::PointCloud<PointType>());
 
-  kdtreeCornerFromMap.reset(new pcl::KdTreeFLANN<PointType, MyL2>());
-  kdtreeSurfFromMap.reset(new pcl::KdTreeFLANN<PointType, MyL2>());
+  kdtreeCornerFromMap = setup_kdtree(params_.intensity_metric);
+  kdtreeSurfFromMap = setup_kdtree(params_.intensity_metric);
+
   pcl::PointRepresentation<pcl::PointXYZI>::ConstPtr representation(
       new IntensityRepresentation);
   kdtreeCornerFromMap->setPointRepresentation(representation);

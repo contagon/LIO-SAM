@@ -85,7 +85,7 @@ struct LioSamParams {
   float globalMapVisualizationLeafSize = 1.0;
 
   // Intensity params
-  std::function<double(double, double)> intensity_metric = 0;
+  std::string intensity_metric = "norm0";
   std::function<double(double, double)> intensity_residual = 0;
 
   // Save pcd
@@ -167,9 +167,11 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(lio_sam::PointTypeIndexed,
                                                              z)(float, index,
                                                                 index))
 
-POINT_CLOUD_REGISTER_POINT_STRUCT(lio_sam::PointTypeResidual,
-                                  (float, x, x)(float, y, y)(float, z, z)
-                                  (float, intensity_diff, intensity_diff)(float, residual,residual))
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+    lio_sam::PointTypeResidual,
+    (float, x, x)(float, y, y)(float, z, z)(float, intensity_diff,
+                                            intensity_diff)(float, residual,
+                                                            residual))
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(
     lio_sam::PointTypePose,

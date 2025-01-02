@@ -30,55 +30,6 @@ using symbol_shorthand::G; // GPS pose
 using symbol_shorthand::V; // Vel   (xdot,ydot,zdot)
 using symbol_shorthand::X; // Pose3 (x,y,z,r,p,y)
 
-struct MyL2 {
-  typedef bool is_kdtree_distance;
-
-  typedef float ElementType;
-  typedef float ResultType;
-
-  template <typename Iterator1, typename Iterator2>
-  float operator()(Iterator1 a, Iterator2 b, size_t size,
-                   float /*worst_dist*/ = -1) const {
-    ResultType result = ResultType();
-    ResultType diff;
-    diff = *a++ - *b++;
-    result += diff * diff;
-    diff = *a++ - *b++;
-    result += diff * diff;
-    diff = *a++ - *b++;
-    result += diff * diff;
-    return result;
-  }
-
-  template <typename U, typename V>
-  inline ResultType accum_dist(const U &a, const V &b, int) const {
-    return (a - b) * (a - b);
-  }
-};
-
-class IntensityRepresentation
-    : public pcl::PointRepresentation<pcl::PointXYZI> {
-  using pcl::PointRepresentation<pcl::PointXYZI>::nr_dimensions_;
-
-public:
-  IntensityRepresentation() {
-    nr_dimensions_ = 3;
-    trivial_ = true;
-  }
-
-  virtual void copyToFloatArray(const pcl::PointXYZI &p, float *out) const {
-    out[0] = p.x;
-    out[1] = p.y;
-    out[2] = p.z;
-    // TODO: When running with zeros here things work fine - breaks when
-    // actually inputting intensity
-    // out[3] = 0.0;
-    // TODO: Damping by 100 seems to help w/ scale issues - may be good enough
-    // for now.
-    // out[3] = p.intensity / 100.0f;
-  }
-};
-
 namespace lio_sam {
 
 class MapOptimization {
@@ -133,8 +84,8 @@ private:
   pcl::PointCloud<PointType>::Ptr laserCloudCornerFromMapDS;
   pcl::PointCloud<PointType>::Ptr laserCloudSurfFromMapDS;
 
-  pcl::KdTreeFLANN<PointType, MyL2>::Ptr kdtreeCornerFromMap;
-  pcl::KdTreeFLANN<PointType, MyL2>::Ptr kdtreeSurfFromMap;
+  pcl::KdTree<PointType>::Ptr kdtreeCornerFromMap;
+  pcl::KdTree<PointType>::Ptr kdtreeSurfFromMap;
 
   // This should always use regular distances
   pcl::KdTreeFLANN<PointTypeIndexed>::Ptr kdtreeSurroundingKeyPoses;
