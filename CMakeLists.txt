@@ -6,11 +6,11 @@ find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
 find_package(OpenMP REQUIRED)
 
-set(GTSAM_DEPENDENCY "find_dependency (GTSAM ${GTSAM_VERSION})")
-set(OPENCV_DEPENDENCY "find_dependency (OpenCV ${OpenCV_VERSION})")
-set(PCL_DEPENDENCY "find_dependency (PCL ${PCL_VERSION})")
+set(GTSAM_DEPENDENCY "find_dependency (GTSAM ${GTSAM_VERSION} QUIET)")
+set(OPENCV_DEPENDENCY "find_dependency (OpenCV ${OpenCV_VERSION} QUIET)")
+set(PCL_DEPENDENCY "find_dependency (PCL ${PCL_VERSION} QUIET)")
 # TODO: OpenMP_VERSION is blank, not sure why, but still works
-set(OpenMP_DEPENDENCY "find_dependency (OpenMP ${OpenMP_VERSION})")
+set(OpenMP_DEPENDENCY "find_dependency (OpenMP ${OpenMP_VERSION} QUIET)")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -64,4 +64,4 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/LioSamConfig.cmake
         DESTINATION ${LIO_CMAKE_EXPORT_DIR})
 
 # install headers
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/include DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} FILES_MATCHING PATTERN "*.h")
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/LIO-SAM DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} FILES_MATCHING PATTERN "*.h")
