@@ -31,37 +31,5 @@ target_link_libraries(
         ${OpenMP_CXX_FLAGS} 
         gtsam
 )
-target_include_directories(${PROJECT_NAME} PUBLIC 
-                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-                            $<INSTALL_INTERFACE:include>)
+target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
-
-# ------------------------- Installation ------------------------- #
-include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
-
-set(LIO_CMAKE_EXPORT_DIR share/liosam/cmake/)
-
-# install targets
-install(TARGETS lio_sam EXPORT LioSamTargets)
-install(EXPORT LioSamTargets DESTINATION ${LIO_CMAKE_EXPORT_DIR})
-
-# configure package config file
-configure_package_config_file(
-  LioSamConfig.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/LioSamConfig.cmake
-  INSTALL_DESTINATION ${LIO_CMAKE_EXPORT_DIR}
-  NO_CHECK_REQUIRED_COMPONENTS_MACRO)
-
-# Write version to file
-write_basic_package_version_file(
-  LioSamConfigVersion.cmake
-  VERSION ${PROJECT_VERSION}
-  COMPATIBILITY SameMajorVersion)
-
-# Install config files
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/LioSamConfig.cmake
-              ${CMAKE_CURRENT_BINARY_DIR}/LioSamConfigVersion.cmake
-        DESTINATION ${LIO_CMAKE_EXPORT_DIR})
-
-# install headers
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/LIO-SAM DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} FILES_MATCHING PATTERN "*.h")
