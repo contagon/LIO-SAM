@@ -20,6 +20,7 @@
 #include <gtsam/slam/BetweenFactor.h>
 #include <gtsam/slam/PriorFactor.h>
 
+#include <optional>
 #include <pcl/point_cloud.h>
 #include <vector>
 
@@ -154,8 +155,6 @@ public:
   // Getters
   // Return the most recent features in the body pose
   pcl::PointCloud<PointType>::Ptr getMostRecentFrame();
-
-  bool saveMap();
 
   pcl::PointCloud<PointType>::Ptr getGlobalMap();
 };

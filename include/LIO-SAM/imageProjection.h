@@ -3,6 +3,7 @@
 #include "types.h"
 #include <Eigen/Geometry>
 #include <deque>
+#include <mutex>
 #include <opencv2/opencv.hpp>
 #include <optional>
 #include <pcl/point_cloud.h>

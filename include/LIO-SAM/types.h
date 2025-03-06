@@ -6,17 +6,12 @@
 #include <vector>
 
 #include <pcl/common/common.h>
+#include <pcl/common/impl/angles.hpp>
 #include <pcl/common/transforms.h>
-#include <pcl/filters/crop_box.h>
-#include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
-#include <pcl/io/pcd_io.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/range_image/range_image.h>
-#include <pcl/registration/icp.h>
-#include <pcl/search/impl/search.hpp>
 
 #include <pcl/point_cloud.h>
 #include <stddef.h>
@@ -167,9 +162,11 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(lio_sam::PointTypeIndexed,
                                                              z)(float, index,
                                                                 index))
 
-POINT_CLOUD_REGISTER_POINT_STRUCT(lio_sam::PointTypeResidual,
-                                  (float, x, x)(float, y, y)(float, z, z)
-                                  (float, intensity_diff, intensity_diff)(float, residual,residual))
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+    lio_sam::PointTypeResidual,
+    (float, x, x)(float, y, y)(float, z, z)(float, intensity_diff,
+                                            intensity_diff)(float, residual,
+                                                            residual))
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(
     lio_sam::PointTypePose,

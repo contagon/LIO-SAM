@@ -1,24 +1,22 @@
 cmake_minimum_required(VERSION 3.16)
-project(lio_sam VERSION 0.1.0 LANGUAGES CXX)
+project(lio_sam)
 
 find_package(GTSAM REQUIRED)
-find_package(OpenCV REQUIRED)
-find_package(PCL REQUIRED)
+find_package(OpenCV REQUIRED core)
+find_package(PCL REQUIRED COMPONENTS common kdtree filters)
 find_package(OpenMP REQUIRED)
-
-set(GTSAM_DEPENDENCY "find_dependency (GTSAM ${GTSAM_VERSION} QUIET)")
-set(OPENCV_DEPENDENCY "find_dependency (OpenCV ${OpenCV_VERSION} QUIET)")
-set(PCL_DEPENDENCY "find_dependency (PCL ${PCL_VERSION} QUIET)")
-# TODO: OpenMP_VERSION is blank, not sure why, but still works
-set(OpenMP_DEPENDENCY "find_dependency (OpenMP ${OpenMP_VERSION} QUIET)")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# ------------------------- Build ------------------------- #
-add_library(${PROJECT_NAME})
+###########
+## Build ##
+###########
+add_library(
+    ${PROJECT_NAME} 
+)
 target_sources(
     ${PROJECT_NAME} 
-    PRIVATE
+    PUBLIC
         src/imuPreintegration.cpp
         src/imageProjection.cpp 
         src/featureExtraction.cpp 
