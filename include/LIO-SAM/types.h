@@ -79,10 +79,6 @@ struct LioSamParams {
   float globalMapVisualizationPoseDensity = 10.0;
   float globalMapVisualizationLeafSize = 1.0;
 
-  // Intensity params
-  std::function<double(double, double)> intensity_metric = 0;
-  std::function<double(double, double)> intensity_residual = 0;
-
   // Save pcd
   bool savePCD = false;
   std::string savePCDDirectory = "/tmp";
