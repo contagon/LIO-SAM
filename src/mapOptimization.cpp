@@ -143,8 +143,9 @@ MapOptimization::transformPointCloud(pcl::PointCloud<PointType>::Ptr cloudIn,
   Eigen::Affine3f transCur = pcl::getTransformation(
       transformIn->x, transformIn->y, transformIn->z, transformIn->roll,
       transformIn->pitch, transformIn->yaw);
-
+#ifdef OPENMP_AVAILABLE
 #pragma omp parallel for num_threads(params_.numberOfCores)
+#endif
   for (int i = 0; i < cloudSize; ++i) {
     const auto &pointFrom = cloudIn->points[i];
     cloudOut->points[i].x = transCur(0, 0) * pointFrom.x +
@@ -382,7 +383,9 @@ void MapOptimization::updatePointAssociateToMap() {
 void MapOptimization::cornerOptimization() {
   updatePointAssociateToMap();
 
+#ifdef OPENMP_AVAILABLE
 #pragma omp parallel for num_threads(params_.numberOfCores)
+#endif
   for (int i = 0; i < laserCloudCornerLastDSNum; i++) {
     PointType pointOri, pointSel;
     PointTypeResidual coeff;
@@ -503,7 +506,9 @@ void MapOptimization::cornerOptimization() {
 void MapOptimization::surfOptimization() {
   updatePointAssociateToMap();
 
+#ifdef OPENMP_AVAILABLE
 #pragma omp parallel for num_threads(params_.numberOfCores)
+#endif
   for (int i = 0; i < laserCloudSurfLastDSNum; i++) {
     PointType pointOri, pointSel;
     PointTypeResidual coeff;
