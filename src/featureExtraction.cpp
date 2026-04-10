@@ -60,6 +60,12 @@ void FeatureExtraction::calculateSmoothness(const CloudInfo &cloudInfo) {
 
 void FeatureExtraction::markOccludedPoints(const CloudInfo &cloudInfo) {
   int cloudSize = cloudInfo.cloud_deskewed.points.size();
+
+  auto mark_if_in_bounds = [this, cloudSize](const int idx) {
+    if (idx >= 0 && idx < cloudSize)
+      cloudNeighborPicked[idx] = 1;
+  };
+
   // mark occluded points and parallel beam points
   for (int i = 5; i < cloudSize - 6; ++i) {
     // occluded points
@@ -71,19 +77,19 @@ void FeatureExtraction::markOccludedPoints(const CloudInfo &cloudInfo) {
     if (columnDiff < 10) {
       // 10 pixel diff in range image
       if (depth1 - depth2 > 0.3) {
-        cloudNeighborPicked[i - 5] = 1;
-        cloudNeighborPicked[i - 4] = 1;
-        cloudNeighborPicked[i - 3] = 1;
-        cloudNeighborPicked[i - 2] = 1;
-        cloudNeighborPicked[i - 1] = 1;
-        cloudNeighborPicked[i] = 1;
+        mark_if_in_bounds(i - 5);
+        mark_if_in_bounds(i - 4);
+        mark_if_in_bounds(i - 3);
+        mark_if_in_bounds(i - 2);
+        mark_if_in_bounds(i - 1);
+        mark_if_in_bounds(i);
       } else if (depth2 - depth1 > 0.3) {
-        cloudNeighborPicked[i + 1] = 1;
-        cloudNeighborPicked[i + 2] = 1;
-        cloudNeighborPicked[i + 3] = 1;
-        cloudNeighborPicked[i + 4] = 1;
-        cloudNeighborPicked[i + 5] = 1;
-        cloudNeighborPicked[i + 6] = 1;
+        mark_if_in_bounds(i + 1);
+        mark_if_in_bounds(i + 2);
+        mark_if_in_bounds(i + 3);
+        mark_if_in_bounds(i + 4);
+        mark_if_in_bounds(i + 5);
+        mark_if_in_bounds(i + 6);
       }
     }
     // parallel beam
@@ -107,6 +113,8 @@ void FeatureExtraction::extractFeatures(const CloudInfo &cloudInfo) {
   pcl::PointCloud<PointType>::Ptr surfaceCloudScanDS(
       new pcl::PointCloud<PointType>());
 
+  const int maxSize = params_.N_SCAN * params_.Horizon_SCAN;
+
   for (int i = 0; i < params_.N_SCAN; i++) {
     surfaceCloudScan->clear();
 
@@ -119,6 +127,9 @@ void FeatureExtraction::extractFeatures(const CloudInfo &cloudInfo) {
                 cloudInfo.endRingIndex[i] * (j + 1)) /
                    6 -
                1;
+
+      sp = std::max(5, std::min(sp, maxSize - 6));
+      ep = std::max(5, std::min(ep, maxSize - 6));
 
       if (sp >= ep)
         continue;
@@ -141,6 +152,9 @@ void FeatureExtraction::extractFeatures(const CloudInfo &cloudInfo) {
 
           cloudNeighborPicked[ind] = 1;
           for (int l = 1; l <= 5; l++) {
+            if (ind + l >= maxSize || ind + l - 1 >= maxSize)
+              break;
+
             int columnDiff = std::abs(int(cloudInfo.pointColInd[ind + l] -
                                           cloudInfo.pointColInd[ind + l - 1]));
             if (columnDiff > 10)
@@ -148,6 +162,9 @@ void FeatureExtraction::extractFeatures(const CloudInfo &cloudInfo) {
             cloudNeighborPicked[ind + l] = 1;
           }
           for (int l = -1; l >= -5; l--) {
+            if (ind + l < 0 || ind + l + 1 < 0)
+              break;
+
             int columnDiff = std::abs(int(cloudInfo.pointColInd[ind + l] -
                                           cloudInfo.pointColInd[ind + l + 1]));
             if (columnDiff > 10)
@@ -166,6 +183,8 @@ void FeatureExtraction::extractFeatures(const CloudInfo &cloudInfo) {
           cloudNeighborPicked[ind] = 1;
 
           for (int l = 1; l <= 5; l++) {
+            if (ind + l >= maxSize || ind + l - 1 >= maxSize)
+              break;
 
             int columnDiff = std::abs(int(cloudInfo.pointColInd[ind + l] -
                                           cloudInfo.pointColInd[ind + l - 1]));
@@ -175,6 +194,8 @@ void FeatureExtraction::extractFeatures(const CloudInfo &cloudInfo) {
             cloudNeighborPicked[ind + l] = 1;
           }
           for (int l = -1; l >= -5; l--) {
+            if (ind + l < 0 || ind + l + 1 < 0)
+              break;
 
             int columnDiff = std::abs(int(cloudInfo.pointColInd[ind + l] -
                                           cloudInfo.pointColInd[ind + l + 1]));

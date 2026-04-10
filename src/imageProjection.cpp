@@ -127,6 +127,20 @@ bool ImageProjection::deskewInfo() {
   std::lock_guard<std::mutex> lock1(imuLock);
   std::lock_guard<std::mutex> lock2(odoLock);
 
+  while (!gyroQueue.empty()) {
+    if (gyroQueue.front().first < timeScanCur - 0.01)
+      gyroQueue.pop_front();
+    else
+      break;
+  }
+
+  while (!odomQueue.empty()) {
+    if (odomQueue.front().stamp < timeScanCur - 0.01)
+      odomQueue.pop_front();
+    else
+      break;
+  }
+
   // make sure IMU data available for the scan
   if (gyroQueue.empty() || gyroQueue.front().first > timeScanCur ||
       gyroQueue.back().first < timeScanEnd) {
@@ -145,19 +159,15 @@ bool ImageProjection::deskewInfo() {
 void ImageProjection::imuDeskewInfo() {
   cloudInfo.imuAvailable = false;
 
-  while (!gyroQueue.empty()) {
-    if (gyroQueue.front().first < timeScanCur - 0.01)
-      gyroQueue.pop_front();
-    else
-      break;
-  }
-
   if (gyroQueue.empty())
     return;
 
   imuPointerCur = 0;
 
   for (int i = 0; i < (int)gyroQueue.size(); ++i) {
+    if (imuPointerCur >= queueLength)
+      break;
+
     auto thisImuMsg = gyroQueue[i];
     double currentImuTime = thisImuMsg.first;
 
